@@ -129,12 +129,6 @@ unlinkat(int dirfd, const char *pathname, int flags)
     return -1;
 }
 
-inline int
-isatty(int fd)
-{
-    return -1;
-}
-
 typedef long __syscall_slong_t;
 
 #ifdef __cplusplus
