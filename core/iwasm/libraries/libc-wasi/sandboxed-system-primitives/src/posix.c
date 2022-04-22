@@ -1992,7 +1992,9 @@ wasmtime_ssp_fd_readdir(
         size_t namlen = strlen(de->d_name);
         __wasi_dirent_t cde = {
             .d_next = fo->directory.offset,
+#ifdef __NUTTX__
             .d_ino = de->d_ino,
+#endif
             .d_namlen = (uint32)namlen,
         };
         switch (de->d_type) {
