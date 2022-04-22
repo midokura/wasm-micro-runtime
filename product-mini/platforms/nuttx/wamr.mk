@@ -4,6 +4,7 @@
 CORE_ROOT := wamr/core
 IWASM_ROOT := wamr/core/iwasm
 SHARED_ROOT := wamr/core/shared
+LIBC_WASI_DIR := wamr/core/iwasm/libraries/libc-wasi
 
 ifeq ($(CONFIG_ARCH_ARMV7A),y)
 WAMR_BUILD_TARGET := THUMBV7A
@@ -207,6 +208,12 @@ CFLAGS += -DWASM_ENABLE_CUSTOM_NAME_SECTION=1
 else
 CFLAGS += -DWASM_ENABLE_CUSTOM_NAME_SECTION=0
 endif
+
+CFLAGS += -DWASM_ENABLE_LIBC_WASI=1
+CFLAGS += -I${LIBC_WASI_DIR}/sandboxed-system-primitives/include
+CFLAGS += -I${LIBC_WASI_DIR}/sandboxed-system-primitives/src
+CSRCS += posix.c
+VPATH += ${LIBC_WASI_DIR}/sandboxed-system-primitives/src
 
 ifeq ($(CONFIG_INTERPRETERS_WAMR_GLOBAL_HEAP_POOL),y)
 CFLAGS += -DWASM_ENABLE_GLOBAL_HEAP_POOL=1
