@@ -15,10 +15,6 @@ void print_mutability(wasm_mutability_t mut) {
 }
 
 void print_limits(const wasm_limits_t* limits) {
-  if (!limits) {
-    printf("unknown limits");
-    return;
-  }
   printf("%ud", limits->min);
   if (limits->max < wasm_limits_max_default) printf(" %ud", limits->max);
 }
@@ -47,10 +43,6 @@ void print_valtypes(const wasm_valtype_vec_t* types) {
 }
 
 void print_externtype(const wasm_externtype_t* type) {
-  if (!type) {
-    printf("unknown extern type");
-    return;
-  }
   switch (wasm_externtype_kind(type)) {
     case WASM_EXTERN_FUNC: {
       const wasm_functype_t* functype =
@@ -86,10 +78,6 @@ void print_externtype(const wasm_externtype_t* type) {
 }
 
 void print_name(const wasm_name_t* name) {
-  if (!name) {
-    printf("unknown name");
-    return;
-  }
   printf("\"%.*s\"", (int)name->size, name->data);
 }
 
@@ -118,7 +106,6 @@ int main(int argc, const char* argv[]) {
   wasm_byte_vec_new_uninitialized(&binary, file_size);
   if (fread(binary.data, file_size, 1, file) != 1) {
     printf("> Error loading module!\n");
-    fclose(file);
     return 1;
   }
   fclose(file);
@@ -135,9 +122,8 @@ int main(int argc, const char* argv[]) {
 
   // Instantiate.
   printf("Instantiating module...\n");
-  wasm_extern_vec_t imports = WASM_EMPTY_VEC;
   own wasm_instance_t* instance =
-    wasm_instance_new(store, module, &imports, NULL);
+    wasm_instance_new(store, module, NULL, NULL);
   if (!instance) {
     printf("> Error instantiating module!\n");
     return 1;

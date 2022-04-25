@@ -51,9 +51,11 @@ typedef void (*TraverseCallbackFunc)(void *key, void *value, void *user_data);
  *
  * @return the hash map created, NULL if failed
  */
-HashMap *
-bh_hash_map_create(uint32 size, bool use_lock, HashFunc hash_func,
-                   KeyEqualFunc key_equal_func, KeyDestroyFunc key_destroy_func,
+HashMap*
+bh_hash_map_create(uint32 size, bool use_lock,
+                   HashFunc hash_func,
+                   KeyEqualFunc key_equal_func,
+                   KeyDestroyFunc key_destroy_func,
                    ValueDestroyFunc value_destroy_func);
 
 /**
@@ -77,7 +79,7 @@ bh_hash_map_insert(HashMap *map, void *key, void *value);
  *
  * @return the value of the found element if success, NULL otherwise
  */
-void *
+void*
 bh_hash_map_find(HashMap *map, void *key);
 
 /**
@@ -93,7 +95,8 @@ bh_hash_map_find(HashMap *map, void *key);
  *       it will be copied to p_old_value for user to process.
  */
 bool
-bh_hash_map_update(HashMap *map, void *key, void *value, void **p_old_value);
+bh_hash_map_update(HashMap *map, void *key, void *value,
+                   void **p_old_value);
 
 /**
  * Remove an element from the hash map
@@ -109,8 +112,8 @@ bh_hash_map_update(HashMap *map, void *key, void *value, void **p_old_value);
  *       p_old_key and p_old_value for user to process.
  */
 bool
-bh_hash_map_remove(HashMap *map, void *key, void **p_old_key,
-                   void **p_old_value);
+bh_hash_map_remove(HashMap *map, void *key,
+                   void **p_old_key, void **p_old_value);
 
 /**
  * Destroy the hashmap
@@ -163,3 +166,4 @@ bh_hash_map_traverse(HashMap *map, TraverseCallbackFunc callback,
 #endif
 
 #endif /* endof WASM_HASHMAP_H */
+

@@ -79,7 +79,8 @@ os_munmap(void *addr, size_t size)
         }
     }
 #if TRACE_MEMMAP != 0
-    printf("Unmap memory, addr: %p, request_size: %zu\n", addr, request_size);
+    printf("Unmap memory, addr: %p, request_size: %zu\n",
+           addr, request_size);
 #endif
 }
 
@@ -94,8 +95,8 @@ os_mem_commit(void *addr, size_t size, int flags)
         return NULL;
 
 #if TRACE_MEMMAP != 0
-    printf("Commit memory, addr: %p, request_size: %zu, protect: 0x%x\n", addr,
-           request_size, protect);
+    printf("Commit memory, addr: %p, request_size: %zu, protect: 0x%x\n",
+           addr, request_size, protect);
 #endif
     return VirtualAlloc((LPVOID)addr, request_size, MEM_COMMIT, protect);
 }
@@ -110,8 +111,8 @@ os_mem_decommit(void *addr, size_t size)
         return;
 
 #if TRACE_MEMMAP != 0
-    printf("Decommit memory, addr: %p, request_size: %zu\n", addr,
-           request_size);
+    printf("Decommit memory, addr: %p, request_size: %zu\n",
+           addr, request_size);
 #endif
     VirtualFree((LPVOID)addr, request_size, MEM_DECOMMIT);
 }
@@ -133,3 +134,4 @@ os_mprotect(void *addr, size_t size, int prot)
 #endif
     return VirtualProtect((LPVOID)addr, request_size, protect, NULL);
 }
+

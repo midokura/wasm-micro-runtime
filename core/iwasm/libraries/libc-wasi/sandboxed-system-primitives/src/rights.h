@@ -1,7 +1,5 @@
-// Part of the Wasmtime Project, under the Apache License v2.0 with LLVM
-// Exceptions. See
-// https://github.com/bytecodealliance/wasmtime/blob/main/LICENSE for license
-// information.
+// Part of the Wasmtime Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://github.com/bytecodealliance/wasmtime/blob/main/LICENSE for license information.
 //
 // Significant parts of this file are derived from cloudabi-utils. See
 // https://github.com/bytecodealliance/wasmtime/blob/main/lib/wasi/sandboxed-system-primitives/src/LICENSE
@@ -13,8 +11,6 @@
 
 #ifndef RIGHTS_H
 #define RIGHTS_H
-
-/* clang-format off */
 
 #define RIGHTS_ALL                                                         \
   (__WASI_RIGHT_FD_DATASYNC | __WASI_RIGHT_FD_READ |                       \
@@ -32,13 +28,7 @@
    __WASI_RIGHT_FD_FILESTAT_SET_SIZE |                                     \
    __WASI_RIGHT_PATH_SYMLINK | __WASI_RIGHT_PATH_UNLINK_FILE |             \
    __WASI_RIGHT_PATH_REMOVE_DIRECTORY |                                    \
-   __WASI_RIGHT_POLL_FD_READWRITE | __WASI_RIGHT_SOCK_CONNECT |            \
-   __WASI_RIGHT_SOCK_LISTEN | __WASI_RIGHT_SOCK_BIND |                     \
-   __WASI_RIGHT_SOCK_ACCEPT | __WASI_RIGHT_SOCK_RECV |                     \
-   __WASI_RIGHT_SOCK_SEND | __WASI_RIGHT_SOCK_ADDR_LOCAL |                 \
-   __WASI_RIGHT_SOCK_ADDR_REMOTE | __WASI_RIGHT_SOCK_RECV_FROM |           \
-   __WASI_RIGHT_SOCK_SEND_TO)
-
+   __WASI_RIGHT_POLL_FD_READWRITE | __WASI_RIGHT_SOCK_SHUTDOWN)
 
 // Block and character device interaction is outside the scope of
 // CloudABI. Simply allow everything.
@@ -77,15 +67,10 @@
 #define RIGHTS_REGULAR_FILE_INHERITING 0
 
 // Operations that apply to sockets and socket pairs.
-#define RIGHTS_SOCKET_BASE                                              \
-  (__WASI_RIGHT_FD_READ | __WASI_RIGHT_FD_FDSTAT_SET_FLAGS |            \
-   __WASI_RIGHT_FD_WRITE | __WASI_RIGHT_FD_FILESTAT_GET |               \
-   __WASI_RIGHT_POLL_FD_READWRITE | __WASI_RIGHT_SOCK_CONNECT |         \
-   __WASI_RIGHT_SOCK_LISTEN | __WASI_RIGHT_SOCK_BIND |                  \
-   __WASI_RIGHT_SOCK_ACCEPT | __WASI_RIGHT_SOCK_RECV |                  \
-   __WASI_RIGHT_SOCK_SEND | __WASI_RIGHT_SOCK_ADDR_LOCAL |              \
-   __WASI_RIGHT_SOCK_ADDR_REMOTE | __WASI_RIGHT_SOCK_RECV_FROM |        \
-   __WASI_RIGHT_SOCK_SEND_TO)
+#define RIGHTS_SOCKET_BASE                                     \
+  (__WASI_RIGHT_FD_READ | __WASI_RIGHT_FD_FDSTAT_SET_FLAGS |   \
+   __WASI_RIGHT_FD_WRITE | __WASI_RIGHT_FD_FILESTAT_GET |      \
+   __WASI_RIGHT_POLL_FD_READWRITE | __WASI_RIGHT_SOCK_SHUTDOWN)
 #define RIGHTS_SOCKET_INHERITING RIGHTS_ALL
 
 // Operations that apply to TTYs.
@@ -94,7 +79,5 @@
    __WASI_RIGHT_FD_WRITE | __WASI_RIGHT_FD_FILESTAT_GET |      \
    __WASI_RIGHT_POLL_FD_READWRITE)
 #define RIGHTS_TTY_INHERITING 0
-
-/* clang-format on */
 
 #endif

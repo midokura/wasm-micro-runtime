@@ -5,13 +5,14 @@
 
 #include "bh_vector.h"
 
-static uint8 *
+static uint8*
 alloc_vector_data(size_t length, size_t size_elem)
 {
     uint64 total_size = ((uint64)size_elem) * length;
     uint8 *data;
 
-    if (length > UINT32_MAX || size_elem > UINT32_MAX
+    if (length > UINT32_MAX
+        || size_elem > UINT32_MAX
         || total_size > UINT32_MAX) {
         return NULL;
     }
@@ -38,21 +39,15 @@ extend_vector(Vector *vector, size_t length)
         return false;
     }
 
-    if (vector->lock)
-        os_mutex_lock(vector->lock);
     memcpy(data, vector->data, vector->size_elem * vector->max_elems);
     BH_FREE(vector->data);
-
     vector->data = data;
     vector->max_elems = length;
-    if (vector->lock)
-        os_mutex_unlock(vector->lock);
     return true;
 }
 
 bool
-bh_vector_init(Vector *vector, size_t init_length, size_t size_elem,
-               bool use_lock)
+bh_vector_init(Vector *vector, size_t init_length, size_t size_elem)
 {
     if (!vector) {
         LOG_ERROR("Init vector failed: vector is NULL.\n");
@@ -71,26 +66,6 @@ bh_vector_init(Vector *vector, size_t init_length, size_t size_elem,
     vector->size_elem = size_elem;
     vector->max_elems = init_length;
     vector->num_elems = 0;
-    vector->lock = NULL;
-
-    if (use_lock) {
-        if (!(vector->lock = BH_MALLOC(sizeof(korp_mutex)))) {
-            LOG_ERROR("Init vector failed: alloc locker failed.\n");
-            bh_vector_destroy(vector);
-            return false;
-        }
-
-        if (BHT_OK != os_mutex_init(vector->lock)) {
-            LOG_ERROR("Init vector failed: init locker failed.\n");
-
-            BH_FREE(vector->lock);
-            vector->lock = NULL;
-
-            bh_vector_destroy(vector);
-            return false;
-        }
-    }
-
     return true;
 }
 
@@ -107,17 +82,12 @@ bh_vector_set(Vector *vector, uint32 index, const void *elem_buf)
         return false;
     }
 
-    if (vector->lock)
-        os_mutex_lock(vector->lock);
-    memcpy(vector->data + vector->size_elem * index, elem_buf,
-           vector->size_elem);
-    if (vector->lock)
-        os_mutex_unlock(vector->lock);
+    memcpy(vector->data + vector->size_elem * index,
+            elem_buf, vector->size_elem);
     return true;
 }
 
-bool
-bh_vector_get(Vector *vector, uint32 index, void *elem_buf)
+bool bh_vector_get(const Vector *vector, uint32 index, void *elem_buf)
 {
     if (!vector || !elem_buf) {
         LOG_ERROR("Get vector elem failed: vector or elem buf is NULL.\n");
@@ -129,17 +99,12 @@ bh_vector_get(Vector *vector, uint32 index, void *elem_buf)
         return false;
     }
 
-    if (vector->lock)
-        os_mutex_lock(vector->lock);
     memcpy(elem_buf, vector->data + vector->size_elem * index,
            vector->size_elem);
-    if (vector->lock)
-        os_mutex_unlock(vector->lock);
     return true;
 }
 
-bool
-bh_vector_insert(Vector *vector, uint32 index, const void *elem_buf)
+bool bh_vector_insert(Vector *vector, uint32 index, const void *elem_buf)
 {
     size_t i;
     uint8 *p;
@@ -159,8 +124,6 @@ bh_vector_insert(Vector *vector, uint32 index, const void *elem_buf)
         return false;
     }
 
-    if (vector->lock)
-        os_mutex_lock(vector->lock);
     p = vector->data + vector->size_elem * vector->num_elems;
     for (i = vector->num_elems - 1; i > index; i--) {
         memcpy(p, p - vector->size_elem, vector->size_elem);
@@ -169,13 +132,10 @@ bh_vector_insert(Vector *vector, uint32 index, const void *elem_buf)
 
     memcpy(p, elem_buf, vector->size_elem);
     vector->num_elems++;
-    if (vector->lock)
-        os_mutex_unlock(vector->lock);
     return true;
 }
 
-bool
-bh_vector_append(Vector *vector, const void *elem_buf)
+bool bh_vector_append(Vector *vector, const void *elem_buf)
 {
     if (!vector || !elem_buf) {
         LOG_ERROR("Append vector elem failed: vector or elem buf is NULL.\n");
@@ -187,13 +147,9 @@ bh_vector_append(Vector *vector, const void *elem_buf)
         return false;
     }
 
-    if (vector->lock)
-        os_mutex_lock(vector->lock);
-    memcpy(vector->data + vector->size_elem * vector->num_elems, elem_buf,
-           vector->size_elem);
+    memcpy(vector->data + vector->size_elem * vector->num_elems,
+           elem_buf, vector->size_elem);
     vector->num_elems++;
-    if (vector->lock)
-        os_mutex_unlock(vector->lock);
     return true;
 }
 
@@ -213,8 +169,6 @@ bh_vector_remove(Vector *vector, uint32 index, void *old_elem_buf)
         return false;
     }
 
-    if (vector->lock)
-        os_mutex_lock(vector->lock);
     p = vector->data + vector->size_elem * index;
 
     if (old_elem_buf) {
@@ -227,8 +181,6 @@ bh_vector_remove(Vector *vector, uint32 index, void *old_elem_buf)
     }
 
     vector->num_elems--;
-    if (vector->lock)
-        os_mutex_unlock(vector->lock);
     return true;
 }
 
@@ -248,12 +200,6 @@ bh_vector_destroy(Vector *vector)
 
     if (vector->data)
         BH_FREE(vector->data);
-
-    if (vector->lock) {
-        os_mutex_destroy(vector->lock);
-        BH_FREE(vector->lock);
-    }
-
     memset(vector, 0, sizeof(Vector));
     return true;
 }

@@ -37,3 +37,4 @@ aot_compile_op_set_global(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx,
 #endif
 
 #endif /* end of _AOT_EMIT_VARIABLE_H_ */
+

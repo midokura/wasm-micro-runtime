@@ -23,7 +23,6 @@ typedef struct Vector {
     size_t num_elems;
     /* size of each element */
     size_t size_elem;
-    void *lock;
 } Vector;
 
 /**
@@ -36,8 +35,7 @@ typedef struct Vector {
  * @return true if success, false otherwise
  */
 bool
-bh_vector_init(Vector *vector, size_t init_length, size_t size_elem,
-               bool use_lock);
+bh_vector_init(Vector *vector, size_t init_length, size_t size_elem);
 
 /**
  * Set element of vector
@@ -62,7 +60,7 @@ bh_vector_set(Vector *vector, uint32 index, const void *elem_buf);
  * @return true if success, false otherwise
  */
 bool
-bh_vector_get(Vector *vector, uint32 index, void *elem_buf);
+bh_vector_get(const Vector *vector, uint32 index, void *elem_buf);
 
 /**
  * Insert element of vector
@@ -124,3 +122,4 @@ bh_vector_destroy(Vector *vector);
 #endif
 
 #endif /* endof _WASM_VECTOR_H */
+

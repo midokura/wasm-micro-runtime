@@ -2,6 +2,7 @@
  * Copyright (C) 2020 XiaoMi Corporation.  All rights reserved.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  */
+#include <nuttx/arch.h>
 
 #include "platform_api_extension.h"
 #include "platform_api_vmcore.h"
@@ -39,7 +40,13 @@ os_mmap(void *hint, size_t size, int prot, int flags)
 {
     if ((uint64)size >= UINT32_MAX)
         return NULL;
-    return malloc((uint32)size);
+
+    /**
+     * TODO: use up_module_text_memalign here
+     */
+    //return malloc((uint32)size);
+    printf("os_mmap size=%d\n", size);
+    return up_module_text_memalign(16, size);
 }
 
 void

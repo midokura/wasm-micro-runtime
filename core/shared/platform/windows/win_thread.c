@@ -47,26 +47,15 @@ static os_thread_data supervisor_thread_data;
 /* Thread data key */
 static DWORD thread_data_key;
 
-/* The GetCurrentThreadStackLimits API from "kernel32" */
-static void(WINAPI *GetCurrentThreadStackLimits_Kernel32)(PULONG_PTR,
-                                                          PULONG_PTR) = NULL;
-
-int
-os_sem_init(korp_sem *sem);
-int
-os_sem_destroy(korp_sem *sem);
-int
-os_sem_wait(korp_sem *sem);
-int
-os_sem_reltimed_wait(korp_sem *sem, uint64 useconds);
-int
-os_sem_signal(korp_sem *sem);
+int os_sem_init(korp_sem* sem);
+int os_sem_destroy(korp_sem* sem);
+int os_sem_wait(korp_sem* sem);
+int os_sem_reltimed_wait(korp_sem* sem, uint64 useconds);
+int os_sem_signal(korp_sem* sem);
 
 int
 os_thread_sys_init()
 {
-    HMODULE module;
-
     if (is_thread_sys_inited)
         return BHT_OK;
 
@@ -89,11 +78,6 @@ os_thread_sys_init()
 
     if (!TlsSetValue(thread_data_key, &supervisor_thread_data))
         goto fail4;
-
-    if ((module = GetModuleHandle((LPSTR) "kernel32"))) {
-        *(void **)&GetCurrentThreadStackLimits_Kernel32 =
-            GetProcAddress(module, "GetCurrentThreadStackLimits");
-    }
 
     is_thread_sys_inited = true;
     return BHT_OK;
@@ -157,16 +141,15 @@ os_thread_cleanup(void *retval)
     BH_FREE(thread_data);
 }
 
-static unsigned __stdcall os_thread_wrapper(void *arg)
+static unsigned __stdcall
+os_thread_wrapper(void *arg)
 {
     os_thread_data *thread_data = arg;
     os_thread_data *parent = thread_data->parent;
     void *retval;
     bool result;
 
-#if 0
     os_printf("THREAD CREATED %p\n", thread_data);
-#endif
 
     os_mutex_lock(&parent->wait_lock);
     thread_data->thread_id = GetCurrentThreadId();
@@ -219,8 +202,9 @@ os_thread_create_with_prio(korp_tid *p_tid, thread_start_routine_t start,
         goto fail3;
 
     os_mutex_lock(&parent->wait_lock);
-    if (!_beginthreadex(NULL, stack_size, os_thread_wrapper, thread_data, 0,
-                        NULL)) {
+    if (!_beginthreadex(NULL, stack_size,
+                        os_thread_wrapper, thread_data,
+                        0, NULL)) {
         os_mutex_unlock(&parent->wait_lock);
         goto fail4;
     }
@@ -305,62 +289,6 @@ os_thread_exit(void *retval)
 }
 
 int
-os_thread_env_init()
-{
-    os_thread_data *thread_data = TlsGetValue(thread_data_key);
-
-    if (thread_data)
-        /* Already created */
-        return BHT_OK;
-
-    if (!(thread_data = BH_MALLOC(sizeof(os_thread_data))))
-        return BHT_ERROR;
-
-    memset(thread_data, 0, sizeof(os_thread_data));
-    thread_data->thread_id = GetCurrentThreadId();
-
-    if (os_sem_init(&thread_data->wait_node.sem) != BHT_OK)
-        goto fail1;
-
-    if (os_mutex_init(&thread_data->wait_lock) != BHT_OK)
-        goto fail2;
-
-    if (os_cond_init(&thread_data->wait_cond) != BHT_OK)
-        goto fail3;
-
-    if (!TlsSetValue(thread_data_key, thread_data))
-        goto fail4;
-
-    return BHT_OK;
-
-fail4:
-    os_cond_destroy(&thread_data->wait_cond);
-fail3:
-    os_mutex_destroy(&thread_data->wait_lock);
-fail2:
-    os_sem_destroy(&thread_data->wait_node.sem);
-fail1:
-    BH_FREE(thread_data);
-    return BHT_ERROR;
-}
-
-void
-os_thread_env_destroy()
-{
-    os_thread_data *thread_data = TlsGetValue(thread_data_key);
-
-    /* Note that supervisor_thread_data's resources will be destroyed
-       by os_thread_sys_destroy() */
-    if (thread_data && thread_data != &supervisor_thread_data) {
-        TlsSetValue(thread_data_key, NULL);
-        os_cond_destroy(&thread_data->wait_cond);
-        os_mutex_destroy(&thread_data->wait_lock);
-        os_sem_destroy(&thread_data->wait_node.sem);
-        BH_FREE(thread_data);
-    }
-}
-
-int
 os_sem_init(korp_sem *sem)
 {
     bh_assert(sem);
@@ -387,7 +315,7 @@ os_sem_wait(korp_sem *sem)
 
     if (ret == WAIT_OBJECT_0)
         return BHT_OK;
-    else if (ret == WAIT_TIMEOUT)
+    else if(ret == WAIT_TIMEOUT)
         return (int)WAIT_TIMEOUT;
     else /* WAIT_FAILED or others */
         return BHT_ERROR;
@@ -420,7 +348,7 @@ os_sem_reltimed_wait(korp_sem *sem, uint64 useconds)
 
     if (ret == WAIT_OBJECT_0)
         return BHT_OK;
-    else if (ret == WAIT_TIMEOUT)
+    else if(ret == WAIT_TIMEOUT)
         return (int)WAIT_TIMEOUT;
     else /* WAIT_FAILED or others */
         return BHT_ERROR;
@@ -430,7 +358,8 @@ int
 os_sem_signal(korp_sem *sem)
 {
     bh_assert(sem);
-    return ReleaseSemaphore(*sem, 1, NULL) != FALSE ? BHT_OK : BHT_ERROR;
+    return ReleaseSemaphore(*sem, 1, NULL) != FALSE
+           ? BHT_OK: BHT_ERROR;
 }
 
 int
@@ -493,8 +422,8 @@ os_cond_destroy(korp_cond *cond)
 }
 
 static int
-os_cond_wait_internal(korp_cond *cond, korp_mutex *mutex, bool timed,
-                      uint64 useconds)
+os_cond_wait_internal(korp_cond *cond, korp_mutex *mutex,
+                      bool timed, uint64 useconds)
 {
     os_thread_wait_node *node = &thread_data_current()->wait_node;
 
@@ -516,11 +445,10 @@ os_cond_wait_internal(korp_cond *cond, korp_mutex *mutex, bool timed,
 
     /* Unlock mutex, wait sem and lock mutex again */
     os_mutex_unlock(mutex);
-    int wait_result;
     if (timed)
-        wait_result = os_sem_reltimed_wait(&node->sem, useconds);
+        os_sem_reltimed_wait(&node->sem, useconds);
     else
-        wait_result = os_sem_wait(&node->sem);
+        os_sem_wait(&node->sem);
     os_mutex_lock(mutex);
 
     /* Remove wait node from wait list */
@@ -536,7 +464,7 @@ os_cond_wait_internal(korp_cond *cond, korp_mutex *mutex, bool timed,
     }
     os_mutex_unlock(&cond->wait_list_lock);
 
-    return wait_result;
+    return BHT_OK;
 }
 
 int
@@ -568,48 +496,7 @@ os_cond_signal(korp_cond *cond)
     return BHT_OK;
 }
 
-int
-os_cond_broadcast(korp_cond *cond)
-{
-    /* Signal all of the wait node of wait list */
-    os_mutex_lock(&cond->wait_list_lock);
-    if (cond->thread_wait_list) {
-        os_thread_wait_node *p = cond->thread_wait_list;
-        while (p) {
-            os_sem_signal(&p->sem);
-            p = p->next;
-        }
-    }
-
-    os_mutex_unlock(&cond->wait_list_lock);
-
-    return BHT_OK;
-}
-
 static os_thread_local_attribute uint8 *thread_stack_boundary = NULL;
-
-static ULONG
-GetCurrentThreadStackLimits_Win7(PULONG_PTR p_low_limit,
-                                 PULONG_PTR p_high_limit)
-{
-    MEMORY_BASIC_INFORMATION mbi;
-    NT_TIB *tib = (NT_TIB *)NtCurrentTeb();
-
-    if (!tib) {
-        os_printf("warning: NtCurrentTeb() failed\n");
-        return -1;
-    }
-
-    *p_high_limit = (ULONG_PTR)tib->StackBase;
-
-    if (VirtualQuery(tib->StackLimit, &mbi, sizeof(mbi))) {
-        *p_low_limit = (ULONG_PTR)mbi.AllocationBase;
-        return 0;
-    }
-
-    os_printf("warning: VirtualQuery() failed\n");
-    return GetLastError();
-}
 
 uint8 *
 os_thread_get_stack_boundary()
@@ -621,17 +508,10 @@ os_thread_get_stack_boundary()
         return thread_stack_boundary;
 
     page_size = os_getpagesize();
-    if (GetCurrentThreadStackLimits_Kernel32) {
-        GetCurrentThreadStackLimits_Kernel32(&low_limit, &high_limit);
-    }
-    else {
-        if (0 != GetCurrentThreadStackLimits_Win7(&low_limit, &high_limit))
-            return NULL;
-    }
-
+    GetCurrentThreadStackLimits(&low_limit, &high_limit);
     /* 4 pages are set unaccessible by system, we reserved
        one more page at least for safety */
-    thread_stack_boundary = (uint8 *)(uintptr_t)low_limit + page_size * 5;
+    thread_stack_boundary = (uint8*)(uintptr_t)low_limit + page_size * 5;
     return thread_stack_boundary;
 }
 
@@ -645,7 +525,7 @@ os_thread_signal_init()
     bool ret;
 
     if (thread_signal_inited)
-        return 0;
+        return true;
 
     ret = SetThreadStackGuarantee(&StackSizeInBytes);
     if (ret)
@@ -665,3 +545,4 @@ os_thread_signal_inited()
     return thread_signal_inited;
 }
 #endif
+

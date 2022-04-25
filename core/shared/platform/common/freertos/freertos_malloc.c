@@ -5,6 +5,7 @@
 
 #include "platform_api_vmcore.h"
 
+
 void *
 os_malloc(unsigned size)
 {
@@ -19,4 +20,6 @@ os_realloc(void *ptr, unsigned size)
 
 void
 os_free(void *ptr)
-{}
+{
+}
+

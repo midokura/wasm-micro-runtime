@@ -5,30 +5,11 @@
  */
 
 #include "platform_api_vmcore.h"
-#include <ztimer64.h>
-#include <kernel_defines.h>
+#include <xtimer.h>
 
-#if IS_USED(MODULE_ZTIMER64_USEC)
 uint64
 os_time_get_boot_microsecond()
 {
-    return ztimer64_now(ZTIMER64_USEC);
+    return xtimer_now_usec64();
 }
-#elif IS_USED(MODULE_ZTIMER64_MSEC)
-uint64
-os_time_get_boot_microsecond()
-{
-    return ztimer64_now(ZTIMER64_MSEC) * 1000;
-}
-#else
-#ifdef __GNUC__
-__attribute__((weak)) uint64
-os_time_get_boot_microsecond();
-#endif
-uint64
-os_time_get_boot_microsecond()
-{
-    static uint64_t times;
-    return ++times;
-}
-#endif
+

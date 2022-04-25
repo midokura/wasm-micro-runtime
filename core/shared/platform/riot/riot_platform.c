@@ -44,11 +44,9 @@ os_free(void *ptr)
 }
 
 void *
-os_mmap(void *hint, size_t size, int prot, int flags)
+os_mmap(void *hint, unsigned int size, int prot, int flags)
 {
-    if (size > ((unsigned)~0))
-        return NULL;
-    return BH_MALLOC((unsigned)size);
+    return BH_MALLOC(size);
 }
 
 void

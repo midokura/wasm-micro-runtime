@@ -5,8 +5,7 @@ BOARD ?= native
 # This has to be the absolute path to the RIOT base directory:
 RIOTBASE ?= $(CURDIR)/../../../../RIOT
 
-USEMODULE += ztimer64_msec
-USEMODULE += ztimer_usec
+USEMODULE += xtimer
 USEMODULE += sema
 
 WPEDANTIC := 0

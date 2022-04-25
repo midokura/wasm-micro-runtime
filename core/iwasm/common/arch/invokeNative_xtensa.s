@@ -19,6 +19,7 @@ invokeNative:
         entry   a1, 256
 
         blti    a4, 1, return   /* at least one argument required: exec_env */
+	/*j	invokeNative*/
 
         /* register a10 ~ a15 are used to pass first 6 arguments */
 

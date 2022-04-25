@@ -4,6 +4,7 @@
 CORE_ROOT := wamr/core
 IWASM_ROOT := wamr/core/iwasm
 SHARED_ROOT := wamr/core/shared
+LIBC_WASI_DIR := wamr/core/iwasm/libraries/libc-wasi
 
 ifeq ($(CONFIG_ARCH_ARMV7A),y)
 WAMR_BUILD_TARGET := THUMBV7A
@@ -17,15 +18,9 @@ else ifeq ($(CONFIG_ARCH_X86_64),y)
 WAMR_BUILD_TARGET := X86_64
 else ifeq ($(CONFIG_ARCH_XTENSA),y)
 WAMR_BUILD_TARGET := XTENSA
-# RV64GC and RV32IM used in older
-# version NuttX
 else ifeq ($(CONFIG_ARCH_RV64GC),y)
 WAMR_BUILD_TARGET := RISCV64
 else ifeq ($(CONFIG_ARCH_RV32IM),y)
-WAMR_BUILD_TARGET := RISCV32
-else ifeq ($(CONFIG_ARCH_RV64),y)
-WAMR_BUILD_TARGET := RISCV64
-else ifeq ($(CONFIG_ARCH_RV32),y)
 WAMR_BUILD_TARGET := RISCV32
 else ifeq ($(CONFIG_ARCH_SIM),y)
 ifeq ($(CONFIG_SIM_M32),y)
@@ -41,11 +36,11 @@ endif
 
 WAMR_BUILD_PLATFORM := nuttx
 
-ifeq ($(WAMR_BUILD_TARGET), X86_32)
+ifeq (${WAMR_BUILD_TARGET}, X86_32)
   CFLAGS += -DBUILD_TARGET_X86_32
   INVOKE_NATIVE := invokeNative_ia32.s
   AOT_RELOC := aot_reloc_x86_32.c
-else ifeq ($(WAMR_BUILD_TARGET), X86_64)
+else ifeq (${WAMR_BUILD_TARGET}, X86_64)
   CFLAGS += -DBUILD_TARGET_X86_64
   INVOKE_NATIVE := invokeNative_em64.s
   AOT_RELOC := aot_reloc_x86_64.c
@@ -74,103 +69,70 @@ else ifeq (${WAMR_BUILD_TARGET}, XTENSA)
   AOT_RELOC := aot_reloc_xtensa.c
 else ifeq (${WAMR_BUILD_TARGET}, RISCV64)
 
-ifeq (${CONFIG_ARCH_DPFPU},y)
-  CFLAGS += -DBUILD_TARGET_RISCV64_LP64D
-else ifneq (${CONFIG_ARCH_FPU},y)
-  CFLAGS += -DBUILD_TARGET_RISCV64_LP64
-else
+ifeq (${CONFIG_ARCH_FPU},y)
   $(error riscv64 lp64f is unsupported)
+else ifeq (${CONFIG_ARCH_DPFPU}, y)
+  CFLAGS += -DBUILD_TARGET_RISCV64_LP64D
+  INVOKE_NATIVE += invokeNative_riscv64_lp64d.s
+else
+  CFLAGS += -DBUILD_TARGET_RISCV64_LP64
+  INVOKE_NATIVE += invokeNative_riscv64_lp64.s
 endif
-  INVOKE_NATIVE += invokeNative_riscv.S
 
-  AOT_RELOC := aot_reloc_riscv.c
+  AOT_RELOC :=
 
 else ifeq (${WAMR_BUILD_TARGET}, RISCV32)
 
-ifeq (${CONFIG_ARCH_DPFPU},y)
-  CFLAGS += -DBUILD_TARGET_RISCV32_ILP32D
-else ifneq (${CONFIG_ARCH_FPU},y)
-  CFLAGS += -DBUILD_TARGET_RISCV32_ILP32
-else
+ifeq (${CONFIG_ARCH_FPU}, y)
   $(error riscv32 ilp32f is unsupported)
+else ifeq (${CONFIG_ARCH_DPFPU}, y)
+  CFLAGS += -DBUILD_TARGET_RISCV64_ILP32D
+  INVOKE_NATIVE += invokeNative_riscv32_ilp32d.s
+else
+  CFLAGS += -DBUILD_TARGET_RISCV64_ILP32
+  INVOKE_NATIVE += invokeNative_riscv32_ilp32.s
 endif
 
-  INVOKE_NATIVE += invokeNative_riscv.S
-  AOT_RELOC := aot_reloc_riscv.c
+  AOT_RELOC :=
 
 else
   $(error Build target is unsupported)
 endif
 
-ifeq ($(CONFIG_INTERPRETERS_WAMR_LOG),y)
+ifeq (${CONFIG_INTERPRETERS_WAMR_LOG},y)
 CFLAGS += -DWASM_ENABLE_LOG=1
+CFLAGS += -DBH_DEBUG=1
+CFLAGS += -DWASM_ENABLE_MEMORY_TRACING=1
+CFLAGS += -DWASM_ENABLE_MEMORY_PROFILING=1
 else
 CFLAGS += -DWASM_ENABLE_LOG=0
 endif
 
-ifeq ($(CONFIG_INTERPRETERS_WAMR_AOT),y)
-CFLAGS += -I$(IWASM_ROOT)/aot
+ifeq (${CONFIG_INTERPRETERS_WAMR_AOT},y)
+CFLAGS += -I${IWASM_ROOT}/aot
 CFLAGS += -DWASM_ENABLE_AOT=1
 CSRCS += aot_loader.c \
-         $(AOT_RELOC) \
-         aot_intrinsic.c \
+         ${AOT_RELOC} \
          aot_runtime.c
+#CSRCS += c_builtin_aot.c
+CSRCS  += c_builtin_cpu.c
 else
 CFLAGS += -DWASM_ENABLE_AOT=0
 endif
 
-ifeq ($(CONFIG_INTERPRETERS_WAMR_FAST), y)
+CFLAGS += -DWASM_ENABLE_INTERP=1
+CSRCS += wasm_runtime.c
+
+ifeq (${CONFIG_INTERPRETERS_WAMR_FAST},y)
 CFLAGS += -DWASM_ENABLE_FAST_INTERP=1
-CFLAGS += -DWASM_ENABLE_INTERP=1
 CSRCS += wasm_interp_fast.c
-CSRCS += wasm_runtime.c
 else
-CFLAGS += -DWASM_ENABLE_FAST_INTERP=0
-endif
-
-ifeq ($(CONFIG_INTERPRETERS_WAMR_CLASSIC), y)
-CFLAGS += -DWASM_ENABLE_INTERP=1
 CSRCS += wasm_interp_classic.c
-CSRCS += wasm_runtime.c
-endif
-
-ifeq ($(findstring y,$(CONFIG_INTERPRETERS_WAMR_FAST)$(CONFIG_INTERPRETERS_WAMR_CLASSIC)), y)
-ifeq ($(CONFIG_INTERPRETERS_WAMR_MINILOADER),y)
-CFLAGS += -DWASM_ENABLE_MINI_LOADER=1
-CSRCS += wasm_mini_loader.c
-else
-CFLAGS += -DWASM_ENABLE_MINI_LOADER=0
-CSRCS += wasm_loader.c
-endif
-endif
-
-ifeq ($(CONFIG_INTERPRETERS_WAMR_SHARED_MEMORY),y)
-CFLAGS += -DWASM_ENABLE_SHARED_MEMORY=1
-CSRCS += wasm_shared_memory.c
-else
-CFLAGS += -DWASM_ENABLE_SHARED_MEMORY=0
-endif
-
-ifeq ($(CONFIG_INTERPRETERS_WAMR_BULK_MEMORY),y)
-CFLAGS += -DWASM_ENABLE_BULK_MEMORY=1
-else
-CFLAGS += -DWASM_ENABLE_BULK_MEMORY=0
-endif
-
-ifeq ($(CONFIG_INTERPRETERS_WAMR_MEMORY_PROFILING),y)
-CFLAGS += -DWASM_ENABLE_MEMORY_PROFILING=1
-else
-CFLAGS += -DWASM_ENABLE_MEMORY_PROFILING=0
-endif
-
-ifeq ($(CONFIG_INTERPRETERS_WAMR_MEMORY_TRACING),y)
-CFLAGS += -DWASM_ENABLE_MEMORY_TRACING=1
-else
-CFLAGS += -DWASM_ENABLE_MEMORY_TRACING=0
 endif
 
 ifeq ($(CONFIG_INTERPRETERS_WAMR_LIBC_BUILTIN),y)
 CFLAGS += -DWASM_ENABLE_LIBC_BUILTIN=1
+CFLAGS += -DWASM_ENABLE_LIBC_WASI=1
 else
 CFLAGS += -DWASM_ENABLE_LIBC_BUILTIN=0
 endif
@@ -184,7 +146,7 @@ endif
 ifeq ($(CONFIG_INTERPRETERS_WAMR_THREAD_MGR),y)
 CFLAGS += -DWASM_ENABLE_THREAD_MGR=1
 CSRCS += thread_manager.c
-VPATH += $(IWASM_ROOT)/libraries/thread-mgr
+VPATH += ${IWASM_ROOT}/libraries/thread-mgr
 else
 CFLAGS += -DWASM_ENABLE_THREAD_MGR=0
 endif
@@ -194,6 +156,14 @@ CFLAGS += -DWASM_ENABLE_LIB_PTHREAD=1
 CSRCS += lib_pthread_wrapper.c
 else
 CFLAGS += -DWASM_ENABLE_LIB_PTHREAD=0
+endif
+
+ifeq ($(CONFIG_INTERPRETERS_WAMR_MINILOADER),y)
+CFLAGS += -DWASM_ENABLE_MINI_LOADER=1
+CSRCS += wasm_mini_loader.c
+else
+CFLAGS += -DWASM_ENABLE_MINI_LOADER=0
+CSRCS += wasm_loader.c
 endif
 
 ifeq ($(CONFIG_INTERPRETERS_WAMR_DISABLE_HW_BOUND_CHECK),y)
@@ -219,8 +189,7 @@ CFLAGS += -Wno-strict-prototypes -Wno-shadow -Wno-unused-variable
 CFLAGS += -Wno-int-conversion -Wno-implicit-function-declaration
 
 CFLAGS += -I${CORE_ROOT} \
-          -I${IWASM_ROOT}/include \
-          -I${IWASM_ROOT}/interpreter \
+		      -I${IWASM_ROOT}/include \
           -I${IWASM_ROOT}/common \
           -I${IWASM_ROOT}/libraries/thread-mgr \
           -I${SHARED_ROOT}/include \
@@ -228,10 +197,13 @@ CFLAGS += -I${CORE_ROOT} \
           -I${SHARED_ROOT}/utils \
           -I${SHARED_ROOT}/utils/uncommon \
           -I${SHARED_ROOT}/mem-alloc \
-          -I${SHARED_ROOT}/platform/nuttx
+          -I${SHARED_ROOT}/platform/nuttx \
+          -I${LIBC_WASI_DIR}/sandboxed-system-primitives/include \
+          -I${LIBC_WASI_DIR}/sandboxed-system-primitives/src \
 
-ifeq ($(WAMR_BUILD_INTERP), 1)
-CFLAGS += -I$(IWASM_ROOT)/interpreter
+
+ifeq (${WAMR_BUILD_INTERP}, 1)
+CFLAGS += -I${IWASM_ROOT}/interpreter
 endif
 
 CSRCS += nuttx_platform.c \
@@ -255,22 +227,26 @@ CSRCS += nuttx_platform.c \
          wasm_runtime_common.c \
          wasm_native.c \
          wasm_exec_env.c \
-         wasm_memory.c \
-         wasm_c_api.c
+         wasm_memory.c
 
-ASRCS += $(INVOKE_NATIVE)
+CSRCS += $(notdir $(wildcard ${LIBC_WASI_DIR}/*.c))
+CSRCS += $(notdir $(wildcard ${LIBC_WASI_DIR}/sandboxed-system-primitives/src/*.c))
 
-VPATH += $(SHARED_ROOT)/platform/nuttx
-VPATH += $(SHARED_ROOT)/platform/common/posix
-VPATH += $(SHARED_ROOT)/mem-alloc
-VPATH += $(SHARED_ROOT)/mem-alloc/ems
-VPATH += $(SHARED_ROOT)/utils
-VPATH += $(SHARED_ROOT)/utils/uncommon
-VPATH += $(IWASM_ROOT)/common
-VPATH += $(IWASM_ROOT)/interpreter
-VPATH += $(IWASM_ROOT)/libraries
-VPATH += $(IWASM_ROOT)/libraries/libc-builtin
-VPATH += $(IWASM_ROOT)/libraries/lib-pthread
-VPATH += $(IWASM_ROOT)/common/arch
-VPATH += $(IWASM_ROOT)/aot
-VPATH += $(IWASM_ROOT)/aot/arch
+ASRCS += ${INVOKE_NATIVE}
+
+VPATH += ${SHARED_ROOT}/platform/nuttx
+VPATH += ${SHARED_ROOT}/platform/common/posix
+VPATH += ${SHARED_ROOT}/mem-alloc
+VPATH += ${SHARED_ROOT}/mem-alloc/ems
+VPATH += ${SHARED_ROOT}/utils
+VPATH += ${SHARED_ROOT}/utils/uncommon
+VPATH += ${IWASM_ROOT}/common
+VPATH += ${IWASM_ROOT}/interpreter
+VPATH += ${IWASM_ROOT}/libraries
+VPATH += ${IWASM_ROOT}/libraries/libc-builtin
+VPATH += ${IWASM_ROOT}/libraries/lib-pthread
+VPATH += ${IWASM_ROOT}/common/arch
+VPATH += ${IWASM_ROOT}/aot
+VPATH += ${IWASM_ROOT}/aot/arch
+VPATH += ${LIBC_WASI_DIR}
+VPATH += ${LIBC_WASI_DIR}/sandboxed-system-primitives/src
