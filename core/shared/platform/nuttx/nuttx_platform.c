@@ -44,9 +44,9 @@ os_mmap(void *hint, size_t size, int prot, int flags)
     /**
      * TODO: use up_module_text_memalign here
      */
-    //return malloc((uint32)size);
-    printf("os_mmap size=%d\n", size);
-    return up_module_text_memalign(16, size);
+    return malloc((uint32)size);
+    /* printf("os_mmap size=%d\n", size); */
+    /* return up_module_text_memalign(16, size); */
 }
 
 void
