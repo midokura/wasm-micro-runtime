@@ -2302,7 +2302,11 @@ wasmtime_ssp_path_filestat_set_times(
     struct timespec ts[2];
     convert_utimens_arguments(st_atim, st_mtim, fstflags, ts);
     int ret =
+#ifdef WASM_ENABLE_LIBC_BUILTIN
+        -1;
+#else
         utimensat(pa.fd, pa.path, ts, pa.follow ? 0 : AT_SYMLINK_NOFOLLOW);
+#endif
 
     path_put(&pa);
     if (ret < 0)
