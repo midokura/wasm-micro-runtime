@@ -210,10 +210,12 @@ CFLAGS += -DWASM_ENABLE_CUSTOM_NAME_SECTION=0
 endif
 
 CFLAGS += -DWASM_ENABLE_LIBC_WASI=1
+CFLAGS += -DWASM_ENABLE_LIBC_BUILTIN=1
 CFLAGS += -I${LIBC_WASI_DIR}/sandboxed-system-primitives/include
 CFLAGS += -I${LIBC_WASI_DIR}/sandboxed-system-primitives/src
-CSRCS += posix.c
+VPATH += ${LIBC_WASI_DIR}/
 VPATH += ${LIBC_WASI_DIR}/sandboxed-system-primitives/src
+CSRCS += $(notdir $(wildcard ${LIBC_WASI_DIR}/*.c))
 
 ifeq ($(CONFIG_INTERPRETERS_WAMR_GLOBAL_HEAP_POOL),y)
 CFLAGS += -DWASM_ENABLE_GLOBAL_HEAP_POOL=1
@@ -221,6 +223,10 @@ CFLAGS += -DWASM_GLOBAL_HEAP_SIZE=$(CONFIG_INTERPRETERS_WAMR_GLOBAL_HEAP_POOL_SI
 else
 CFLAGS += -DWASM_ENABLE_GLOBAL_HEAP_POOL=0
 endif
+
+CSRCS += posix_socket.c
+CSRCS += $(notdir $(wildcard ${LIBC_WASI_DIR}/*.c))
+CSRCS += $(notdir $(wildcard ${LIBC_WASI_DIR}/sandboxed-system-primitives/src/*.c))
 
 CFLAGS += -Wno-strict-prototypes -Wno-shadow -Wno-unused-variable
 CFLAGS += -Wno-int-conversion -Wno-implicit-function-declaration
