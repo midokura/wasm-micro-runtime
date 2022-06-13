@@ -10,7 +10,7 @@ enum Idx  {GRAPH=0, GRAPH_SIZE=1 };
 
 
 std::unique_ptr<tflite::Interpreter> interpreter = NULL;
-std::unique_ptr<tflite::FlatBufferModel> model = NULL;
+std::unique_ptr<tflite::FlatBufferModel> model =  NULL;
 
 uint32_t _load(graph_builder_array builder, graph_encoding encoding) {
 
