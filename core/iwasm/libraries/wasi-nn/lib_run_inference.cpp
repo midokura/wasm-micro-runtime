@@ -12,15 +12,15 @@ enum Idx  {GRAPH=0, GRAPH_SIZE=1 };
 std::unique_ptr<tflite::Interpreter> interpreter = NULL;
 std::unique_ptr<tflite::FlatBufferModel> model = NULL;
 
-uint32_t _load(graph_builder_array graph_builder, graph_encoding encoding) {
+uint32_t _load(graph_builder_array builder, graph_encoding encoding) {
 
     if(encoding!=tensorflow){return invalid_argument;}
 
-	uint32_t *size = (uint32_t*) graph_builder[Idx::GRAPH_SIZE];
+	uint32_t *size = (uint32_t*) builder[Idx::GRAPH_SIZE];
 
     tflite::ErrorReporter  *error_reporter;
          
-    model = tflite::FlatBufferModel::BuildFromBuffer((const char *)graph_builder[Idx::GRAPH], *size, error_reporter);
+    model = tflite::FlatBufferModel::BuildFromBuffer((const char *)builder[Idx::GRAPH], *size, error_reporter);
 
     if(model== nullptr){
         printf("failure: null model \n"); 
@@ -29,8 +29,8 @@ uint32_t _load(graph_builder_array graph_builder, graph_encoding encoding) {
 
 	// Build the interpreter with the InterpreterBuilder.
     tflite::ops::builtin::BuiltinOpResolver resolver;
-	tflite::InterpreterBuilder builder(*model, resolver);
-    builder(&interpreter);
+	tflite::InterpreterBuilder tflite_builder(*model, resolver);
+    tflite_builder(&interpreter);
 
     if(interpreter==nullptr){
         printf("failure: null interpreter \n");
