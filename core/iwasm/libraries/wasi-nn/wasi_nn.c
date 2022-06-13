@@ -73,6 +73,7 @@ wasi_nn_set_input(
 }
 
 
+
 void wasi_nn_compute()
 {}
 
