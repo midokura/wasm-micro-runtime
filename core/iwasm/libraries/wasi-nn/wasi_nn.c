@@ -72,8 +72,8 @@ wasi_nn_set_input(
     return _set_input(tensor_struct);
 }
 
-void
-wasi_nn_compute()
+
+void wasi_nn_compute()
 {}
 
 void
