@@ -95,7 +95,7 @@ wasi_nn_get_output(wasm_exec_env_t exec_env, graph_execution_context context, ui
                             .type = type,
                             .data = data };
 
-    return _get_output(graph_context, w_index ,tensor_struct);
+    return _get_output(graph_context, w_index ,&tensor_struct);
 
 }
 
@@ -120,6 +120,8 @@ wasi_nn_compute(wasm_exec_env_t exec_env , graph_execution_context context)
 static NativeSymbol native_symbols_wasi_nn[] = {
     REG_NATIVE_FUNC(load, "(ii)i"),
     REG_NATIVE_FUNC(set_input, "(ii*i*)i"),
+    REG_NATIVE_FUNC(get_output, "(ii*ii*i)i" ),
+    REG_NATIVE_FUNC(compute, "(i)i")
 };
 
 uint32_t
