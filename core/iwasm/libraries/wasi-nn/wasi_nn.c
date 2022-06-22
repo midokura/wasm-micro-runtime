@@ -107,7 +107,7 @@ wasi_nn_compute(wasm_exec_env_t exec_env , graph_execution_context context)
 
     graph_execution_context context = wasm_runtime_addr_app_to_native(instance, context);
 
-    return _compute(_compute(context));
+    return _compute(context);
 }
 
 
