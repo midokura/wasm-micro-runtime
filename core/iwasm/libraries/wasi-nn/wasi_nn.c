@@ -124,3 +124,6 @@ get_wasi_nn_export_apis(NativeSymbol **p_libc_wasi_apis)
     *p_libc_wasi_apis = native_symbols_wasi_nn;
     return sizeof(native_symbols_wasi_nn) / sizeof(NativeSymbol);
 }
+
+
+

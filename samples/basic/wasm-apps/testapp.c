@@ -9,6 +9,13 @@
 #include <stdint.h>
 #include "wasi_nn.h"
 
+#include <fcntl.h>
+#include <errno.h>
+
+
+
+#define BUFFER_SIZE 32
+
 int
 intToStr(int x, char *str, int str_len, int digit);
 int
@@ -19,9 +26,53 @@ calculate_native(int32_t n, int32_t func1, int32_t func2);
 //
 // Primitive parameters functions
 //
+
+void test_load ()
+{
+    // assert(0==0);
+}
+
+void test_inference ()
+{
+
+}
+
+void test_input()
+{
+     uint32_t *dim = malloc(4 * sizeof(uint32_t));
+
+    dim[0] = 1;
+    dim[1] = 3;
+    dim[2] = 4;
+    dim[3] = 5;
+
+    uint8_t *input_tensor = malloc(3 * sizeof(uint8_t));
+
+    input_tensor[0] = 3;
+
+    set_input(0, 0, dim, 3, input_tensor);
+
+}
+
 float
 generate_float(int iteration, double seed1, float seed2)
-{
+{  
+    int *fp=fopen("baseline.tflite","r");
+    int c;
+    while(1) {
+      c = fgetc(fp);
+      if( feof(fp) ) { 
+         break ;
+      }
+      printf("%c", c);
+    }
+    fclose(fp);
+
+    char*model= bh_read_file_to_buffer("baseline.tflite" ,1000 );
+
+
+    return 0;
+
     char *buf = strdup("test_message");
     uint32_t *size = malloc(sizeof(uint32_t));
     *size = 4096;
