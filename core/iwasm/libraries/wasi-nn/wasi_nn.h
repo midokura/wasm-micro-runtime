@@ -46,8 +46,8 @@ set_input(graph_execution_context context, uint32_t index,
           uint32_t *input_tensor_size, uint32_t input_tensor_type,
           uint8_t *input_tensor);
 
-void
-compute();
+uint32_t
+wasi_nn_compute(graph_execution_context context);
 
 uint32_t
 get_output(graph_execution_context context, uint32_t index, uint8_t *out_buffer,

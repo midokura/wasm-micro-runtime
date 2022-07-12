@@ -74,7 +74,6 @@ _set_input(tensor input_tensor)
 uint32_t
 _compute(graph_execution_context context)
 {
-
     interpreter->Invoke();
 
     return success;
