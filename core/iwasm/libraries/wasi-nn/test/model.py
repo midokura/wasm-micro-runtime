@@ -10,23 +10,24 @@ import pathlib
 
 model = tf.keras.Sequential([
     tf.keras.layers.InputLayer(input_shape=[5, 5, 1]),
-    tf.keras.layers.Conv2D(1, (5, 5), kernel_initializer=tf.keras.initializers.Constant(value=1)
+    tf.keras.layers.Conv2D(1, (5, 5), kernel_initializer=tf.keras.initializers.Constant(
+        value=1), bias_initializer='zeros'
                            )
 ])
 
-inp = np.ones((1, 5, 5, 1))
+inp=np.ones((1, 5, 5, 1))
 
 
-res = model.predict(inp)
+res=model.predict(inp)
 
 print(res)
 
 
-converter = tf.lite.TFLiteConverter.from_keras_model(model)
+converter=tf.lite.TFLiteConverter.from_keras_model(model)
 
-tflite_model = converter.convert()
+tflite_model=converter.convert()
 
-tflite_models_dir = pathlib.Path("./")
+tflite_models_dir=pathlib.Path("./")
 
-tflite_model_file = tflite_models_dir/"test.tflite"
+tflite_model_file=tflite_models_dir/"test.tflite"
 tflite_model_file.write_bytes(tflite_model)

@@ -13,6 +13,8 @@ typedef uint32_t buffer_size;
 
 typedef uint32_t graph_execution_context;
 
+typedef uint32_t graph;
+
 typedef enum { success = 0, invalid_argument, missing_memory, busy } nn_erno;
 
 typedef uint32_t *tensor_dimensions;
@@ -38,8 +40,8 @@ typedef enum { cpu = 0, gpu, tpu } execution_target;
 uint32_t
 load(graph_builder_array builder, graph_encoding encoding);
 
-void
-init_execution_context();
+uint32_t
+init_execution_context(graph graph);
 
 uint32_t
 set_input(graph_execution_context context, uint32_t index,
@@ -47,7 +49,7 @@ set_input(graph_execution_context context, uint32_t index,
           uint8_t *input_tensor);
 
 uint32_t
-wasi_nn_compute(graph_execution_context context);
+compute(graph_execution_context context);
 
 uint32_t
 get_output(graph_execution_context context, uint32_t index, uint8_t *out_buffer,

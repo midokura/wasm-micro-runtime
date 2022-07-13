@@ -16,11 +16,17 @@
 
 #define BUFFER_SIZE 32
 
+#define INPUT_SIZE 25
+
+#define MODEL_NAME "test.tflite"
+
+#define EPSILON 1e-8
+
 void
-test_load()
+my_load()
 {
     printf("loading model\n");
-    FILE *pFile = fopen("test.tflite", "r");
+    FILE *pFile = fopen(MODEL_NAME, "r");
 
     assert(pFile != NULL);
 
@@ -59,7 +65,7 @@ test_load()
 }
 
 void
-test_input()
+my_input()
 {
     printf("loading inputs\n");
 
@@ -70,9 +76,9 @@ test_input()
     dim[2] = 5;
     dim[3] = 1;
 
-    uint8_t *input_tensor = malloc(25 * sizeof(uint8_t));
+    float *input_tensor = malloc(INPUT_SIZE * sizeof(float));
 
-    for (int i = 0; i < 25; i++) {
+    for (int i = 0; i < INPUT_SIZE; i++) {
 
         input_tensor[i] = 1;
     }
@@ -83,39 +89,90 @@ test_input()
 }
 
 void
-test_inference(graph_execution_context context)
+my_inference(graph_execution_context context)
 {
     printf("running model \n");
     compute(context);
 }
 
 void
-test_output(graph_execution_context context, uint32_t index,
-            uint8_t *out_tensor)
+my_allocate(graph graph)
 {
-    get_output(context, index, out_tensor, 1);
+    printf("Allocating tensors \n");
+    init_execution_context(graph);
 }
-int
-main()
+
+void
+my_output(graph_execution_context context, uint32_t index, float *out_tensor, int out_size)
 {
-    printf("unit tests \n");
+    printf("Retrieving output \n");
+    get_output(context, index, out_tensor, out_size);
+}
 
-    test_load();
+float *
+infer(float *input, int input_size, int * output_size)
+{
+    graph graph;
+    printf("end to end  \n");
 
-    test_input();
+    my_load();
+
+    my_allocate(graph);
+
+    my_input();
 
     graph_execution_context context;
-    test_inference(context);
+    my_inference(context);
 
     uint32_t index;
 
-    uint8_t out_tensor[1];
+    float *out_tensor= (float *)malloc(sizeof(float) * 1);
 
-    test_output(context, index, out_tensor);
 
-    printf("%d \n", out_tensor[0]);
+    my_output(context, index, out_tensor,1* sizeof(float) );
+
+    printf("wasm is: %f \n", out_tensor[0]);
 
     printf("finished\n");
+}
+
+void
+test_sum()
+{
+    int output_size=0; 
+
+    //my_inference( &output_size);
+
+    // assert( abs(out-25.0) < EPSILON);
+
+    // assert (output_size == 1);
+
+    //printf("");
+}
+
+void
+test_max()
+{
+}
+
+void
+test_average()
+{
+
+}
+
+int
+main()
+{
+    // input tensor
+
+    float *input;
+    int input_size;
+    int * output_size;
+
+    infer(input,  input_size, output_size);
+
+    // retrieve output tensor
 
     return 0;
 }
