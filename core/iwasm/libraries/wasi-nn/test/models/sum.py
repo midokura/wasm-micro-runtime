@@ -15,19 +15,11 @@ model = tf.keras.Sequential([
                            )
 ])
 
-inp=np.ones((1, 5, 5, 1))
 
-
-res=model.predict(inp)
-
-print(res)
-
+#Export model to tflite 
 
 converter=tf.lite.TFLiteConverter.from_keras_model(model)
-
 tflite_model=converter.convert()
-
 tflite_models_dir=pathlib.Path("./")
-
-tflite_model_file=tflite_models_dir/"test.tflite"
+tflite_model_file=tflite_models_dir/"sum.tflite"
 tflite_model_file.write_bytes(tflite_model)

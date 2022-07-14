@@ -18,15 +18,15 @@
 
 #define INPUT_SIZE 25
 
-#define MODEL_NAME "test.tflite"
+//#define MODEL_NAME "test.tflite"
 
 #define EPSILON 1e-8
 
 void
-my_load()
+my_load(char *model_name)
 {
     printf("loading model\n");
-    FILE *pFile = fopen(MODEL_NAME, "r");
+    FILE *pFile = fopen(model_name, "r");
 
     assert(pFile != NULL);
 
@@ -65,9 +65,68 @@ my_load()
 }
 
 void
-my_input()
+my_input(float *input_tensor, uint32_t *dim)
 {
     printf("loading inputs\n");
+
+    set_input(0, 0, dim, 3, input_tensor);
+
+    printf("Success input loaded \n");
+}
+
+void
+my_compute(graph_execution_context context)
+{
+    printf("running model \n");
+    compute(context);
+}
+
+void
+my_allocate(graph graph)
+{
+    printf("Allocating tensors \n");
+    init_execution_context(graph);
+}
+
+void
+my_output(graph_execution_context context, uint32_t index, float *out_tensor,
+          int out_size)
+{
+    printf("Retrieving output \n");
+    get_output(context, index, out_tensor, out_size);
+}
+
+float *
+my_inference(float *input, uint32_t *input_size, int *output_size,
+             char *model_name)
+{
+    graph graph;
+    printf("end to end  \n");
+
+    my_load(model_name);
+
+    my_allocate(graph);
+
+    my_input(input, input_size);
+
+    graph_execution_context context;
+    my_compute(context);
+
+    uint32_t index;
+
+    float *out_tensor = (float *)malloc(sizeof(float) * 1);
+
+    my_output(context, index, out_tensor, 1 * sizeof(float));
+
+    printf("finished\n");
+
+    return out_tensor;
+}
+
+void
+test_sum()
+{
+    int output_size = 0;
 
     uint32_t *dim = malloc(4 * sizeof(uint32_t));
 
@@ -83,82 +142,62 @@ my_input()
         input_tensor[i] = 1;
     }
 
-    set_input(0, 0, dim, 3, input_tensor);
+    float *output =
+        my_inference(input_tensor, dim, &output_size, "models/sum.tflite");
 
-    printf("Success input loaded \n");
-}
-
-void
-my_inference(graph_execution_context context)
-{
-    printf("running model \n");
-    compute(context);
-}
-
-void
-my_allocate(graph graph)
-{
-    printf("Allocating tensors \n");
-    init_execution_context(graph);
-}
-
-void
-my_output(graph_execution_context context, uint32_t index, float *out_tensor, int out_size)
-{
-    printf("Retrieving output \n");
-    get_output(context, index, out_tensor, out_size);
-}
-
-float *
-infer(float *input, int input_size, int * output_size)
-{
-    graph graph;
-    printf("end to end  \n");
-
-    my_load();
-
-    my_allocate(graph);
-
-    my_input();
-
-    graph_execution_context context;
-    my_inference(context);
-
-    uint32_t index;
-
-    float *out_tensor= (float *)malloc(sizeof(float) * 1);
-
-
-    my_output(context, index, out_tensor,1* sizeof(float) );
-
-    printf("wasm is: %f \n", out_tensor[0]);
-
-    printf("finished\n");
-}
-
-void
-test_sum()
-{
-    int output_size=0; 
-
-    //my_inference( &output_size);
-
-    // assert( abs(out-25.0) < EPSILON);
-
-    // assert (output_size == 1);
-
-    //printf("");
+    assert(abs(output[0] - 25.0) < EPSILON);
 }
 
 void
 test_max()
 {
+    int output_size = 0;
+    uint32_t *dim = malloc(4 * sizeof(uint32_t));
+
+    dim[0] = 1;
+    dim[1] = 5;
+    dim[2] = 5;
+    dim[3] = 1;
+
+    float *input_tensor = malloc(INPUT_SIZE * sizeof(float));
+
+    for (int i = 0; i < INPUT_SIZE; i++) {
+
+        input_tensor[i] = i;
+    }
+
+    float *output =
+        my_inference(input_tensor, dim, &output_size, "models/max.tflite");
+
+    printf("max is: %f \n ", output[0]);
+
+    assert(abs(output[0] - 24.0) < EPSILON);
 }
 
 void
 test_average()
 {
+    int output_size = 0;
+    uint32_t *dim = malloc(4 * sizeof(uint32_t));
 
+    dim[0] = 1;
+    dim[1] = 5;
+    dim[2] = 5;
+    dim[3] = 1;
+
+    float *input_tensor = malloc(INPUT_SIZE * sizeof(float));
+
+    for (int i = 0; i < INPUT_SIZE; i++) {
+
+        input_tensor[i] = i;
+    }
+
+    float *output =
+        my_inference(input_tensor, dim, &output_size, "models/average.tflite");
+
+    printf("average is: %f \n ", output[0]);
+
+    assert(abs(output[0] - 12.0) < EPSILON);
 }
 
 int
@@ -168,9 +207,11 @@ main()
 
     float *input;
     int input_size;
-    int * output_size;
+    int *output_size;
 
-    infer(input,  input_size, output_size);
+    test_sum();
+    test_max();
+    test_average();
 
     // retrieve output tensor
 
