@@ -66,10 +66,10 @@ _set_input(tensor input_tensor)
         max_size *= input_tensor.dimensions[i];
     }
 
-    float* float_input = (float*) input_tensor.data;
+    float *float_input = (float *)input_tensor.data;
 
     for (int i = 0; i < max_size; i++) {
-        input[i] =  float_input[i];
+        input[i] = float_input[i];
     }
 
     return success;
@@ -84,26 +84,58 @@ _compute(graph_execution_context context)
 }
 
 uint32_t
-_get_output(graph_execution_context context, uint32_t index,
-            uint8_t *out_tensor, buffer_size out_size)
+_init_execution_context(graph graph)
 {
-    auto* out = interpreter->typed_output_tensor<float>(0);
-
-    if (out==NULL)
-    {
-        printf("missing memory\n");
-        return missing_memory;
-    }
-    printf("native is : %f \n  size: %d \n" ,out[0] ,out_size);
-
-    memcpy(out_tensor, out, out_size);
-    
+    interpreter->AllocateTensors();
     return success;
 }
 
 uint32_t
-_init_execution_context(graph graph)
+_get_output(graph_execution_context context, uint32_t index,
+            uint8_t *out_tensor, buffer_size out_size)
 {
-    interpreter->AllocateTensors();
+    // auto *out = interpreter->typed_output_tensor<float>(0);
+
+    // if (out == NULL) {
+    //     printf("missing memory\n");
+    //     return missing_memory;
+    // }
+    // printf("native is : %f \n  size: %d \n", out[0], out_size);
+
+    // memcpy(out_tensor, out, out_size);
+
+    // multiple tensor version
+
+    int num_output_tensors = interpreter->outputs().size();
+    uint32_t elems[num_output_tensors];
+    uint32_t total_elems = 0;
+
+    for (int i = 0; i < num_output_tensors; ++i) {
+        auto tensor = interpreter->output_tensor(i);
+
+        if (tensor == NULL) {
+            printf("missing memory\n");
+            return missing_memory;
+        }
+
+        uint32_t n = 1;
+        for (int j = 0; j < (int)tensor->dims->size; ++j) {
+            n *= (uint32_t)tensor->dims->data[j];
+        }
+        total_elems += n;
+
+        elems[i] = n;
+    }
+
+    // assert(total_elems == output_tensor_elems);
+
+    int offset = 0;
+    for (int i = 0; i < num_output_tensors; ++i) {
+        int dims = (int)elems[i];
+        float *tensor = interpreter->typed_output_tensor<float>(i);
+        memcpy(&out_tensor[offset], tensor, sizeof(float) * dims);
+        offset += dims;
+    }
+
     return success;
 }
