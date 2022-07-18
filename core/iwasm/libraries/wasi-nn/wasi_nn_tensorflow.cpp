@@ -94,19 +94,12 @@ uint32_t
 _get_output(graph_execution_context context, uint32_t index,
             uint8_t *out_tensor, buffer_size out_size)
 {
-    // auto *out = interpreter->typed_output_tensor<float>(0);
-
-    // if (out == NULL) {
-    //     printf("missing memory\n");
-    //     return missing_memory;
-    // }
-    // printf("native is : %f \n  size: %d \n", out[0], out_size);
-
-    // memcpy(out_tensor, out, out_size);
-
-    // multiple tensor version
+    printf("out size : %d \n", out_size);
 
     int num_output_tensors = interpreter->outputs().size();
+    printf("num tensors : %d \n", num_output_tensors);
+
+
     uint32_t elems[num_output_tensors];
     uint32_t total_elems = 0;
 
@@ -133,6 +126,10 @@ _get_output(graph_execution_context context, uint32_t index,
     for (int i = 0; i < num_output_tensors; ++i) {
         int dims = (int)elems[i];
         float *tensor = interpreter->typed_output_tensor<float>(i);
+        for (int j =0 ; j<dims ; j++)
+        {
+            printf("output : %f \n", tensor[j]);
+        }
         memcpy(&out_tensor[offset], tensor, sizeof(float) * dims);
         offset += dims;
     }

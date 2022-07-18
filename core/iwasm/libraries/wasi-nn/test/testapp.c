@@ -18,8 +18,6 @@
 
 #define INPUT_SIZE 25
 
-//#define MODEL_NAME "test.tflite"
-
 #define EPSILON 1e-8
 
 void
@@ -114,9 +112,9 @@ my_inference(float *input, uint32_t *input_size, int *output_size,
 
     uint32_t index;
 
-    float *out_tensor = (float *)malloc(sizeof(float) * 1);
+    float *out_tensor = (float *)malloc(sizeof(float) * 5);
 
-    my_output(context, index, out_tensor, 1 * sizeof(float));
+    my_output(context, index, out_tensor, 5 * sizeof(float));
 
     printf("finished\n");
 
@@ -200,20 +198,63 @@ test_average()
     assert(abs(output[0] - 12.0) < EPSILON);
 }
 
+void
+test_mult_dimensions()
+{
+    int output_size = 0;
+    uint32_t *dim = malloc(4 * sizeof(uint32_t));
+
+    dim[0] = 1;
+    dim[1] = 3;
+    dim[2] = 3;
+    dim[3] = 1;
+
+    float *input_tensor = malloc(9 * sizeof(float));
+
+    for (int i = 0; i < 9; i++) {
+
+        input_tensor[i] = i;
+    }
+
+    float *output =
+        my_inference(input_tensor, dim, &output_size, "models/mult_dim.tflite");
+
+    for (int i = 0; i < 9; i++) {
+        printf(" %f  \n ", output[i]);
+    }
+}
+
+void
+test_mult_outputs()
+{
+    int output_size = 0;
+    uint32_t *dim = malloc(4 * sizeof(uint32_t));
+
+    dim[0] = 1;
+    dim[1] = 6;
+    dim[2] = 6;
+    dim[3] = 1;
+
+    float *input_tensor = malloc(INPUT_SIZE * sizeof(float));
+
+    for (int i = 0; i < INPUT_SIZE; i++) {
+
+        input_tensor[i] = i;
+    }
+
+    float *output =
+        my_inference(input_tensor, dim, &output_size, "models/mult_out.tflite");
+}
+
 int
 main()
 {
     // input tensor
-
-    float *input;
-    int input_size;
-    int *output_size;
-
     test_sum();
     test_max();
     test_average();
-
-    // retrieve output tensor
+    test_mult_dimensions();
+    test_mult_outputs();
 
     return 0;
 }
