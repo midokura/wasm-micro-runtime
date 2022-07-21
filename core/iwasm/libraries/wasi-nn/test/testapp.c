@@ -10,6 +10,7 @@
 
 #include <assert.h>
 #include "wasi_nn.h"
+#include "my_tests.h"
 
 #include <fcntl.h>
 #include <errno.h>
@@ -249,7 +250,6 @@ test_mult_outputs()
 int
 main()
 {
-    // input tensor
     test_sum();
     test_max();
     test_average();

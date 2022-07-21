@@ -120,8 +120,6 @@ _get_output(graph_execution_context context, uint32_t index,
         elems[i] = n;
     }
 
-    // assert(total_elems == output_tensor_elems);
-
     int offset = 0;
     for (int i = 0; i < num_output_tensors; ++i) {
         int dims = (int)elems[i];

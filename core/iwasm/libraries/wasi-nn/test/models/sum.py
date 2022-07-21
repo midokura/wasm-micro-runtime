@@ -16,4 +16,4 @@ model = tf.keras.Sequential([
 
 # Export model to tflite
 
-np.save(model, "sum.tflite")
+save_model(model, "sum.tflite")
