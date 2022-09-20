@@ -9,8 +9,6 @@ set (CMAKE_VERBOSE_MAKEFILE OFF)
 
 set (WAMR_BUILD_PLATFORM "linux")
 
-set (WAMR_BUILD_WASI_NN  1)
-
 # Reset default linker flags
 set (CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 set (CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
