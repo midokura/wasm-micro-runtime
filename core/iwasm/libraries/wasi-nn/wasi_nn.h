@@ -5,6 +5,7 @@
 
 /**
  * Following definition from:
+ * [Apr 6, 2022]
  * https://github.com/WebAssembly/wasi-nn/blob/c557b2e9f84b6630f13b3185b43607f0388343b2/phases/ephemeral/witx/wasi_ephemeral_nn.witx
  */
 #define DIM_SIZE 4
