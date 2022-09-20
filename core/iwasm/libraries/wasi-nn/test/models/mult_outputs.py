@@ -13,11 +13,11 @@ import pathlib
 
 inputs = Input(shape=(4, 4, 1))
 
-output1 = Conv2D(1, (2, 2), kernel_initializer=tf.keras.initializers.Constant(
+output1 = Conv2D(1, (4, 1), kernel_initializer=tf.keras.initializers.Constant(
     value=1), bias_initializer='zeros'
 )(inputs)
 output2 = AveragePooling2D(pool_size=(
-    2, 2), strides=None, padding="valid", data_format=None)(inputs)
+    4, 1), strides=None, padding="valid", data_format=None)(inputs)
 
 model = Model(inputs=inputs, outputs=[output1, output2])
 

@@ -212,9 +212,8 @@ test_mult_dimensions()
     float *output = my_inference(input.input_tensor, input.dim, &output_size,
                                  "models/mult_dim.tflite");
 
-    for (int i = 0; i < 9; i++) {
-        printf(" %f  \n ", output[i]);
-    }
+    for (int i = 0; i < 9; i++)
+        assert(abs(output[i] - i) < EPSILON);
 
     free(input.dim);
     free(input.input_tensor);
@@ -232,9 +231,12 @@ test_mult_outputs()
     float *output = my_inference(input.input_tensor, input.dim, &output_size,
                                  "models/mult_out.tflite");
 
-    for (int i = 0; i < 13; i++) {
-        printf(" %f  \n ", output[i]);
-    }
+    // first tensor check
+    for (int i = 0; i < 4; i++)
+        assert(abs(output[i] - (i*4 + 24)) < EPSILON);
+    // second tensor check
+    for (int i = 0; i < 4; i++)
+        assert(abs(output[i+4] - (i + 6)) < EPSILON);
 
     free(input.dim);
     free(input.input_tensor);

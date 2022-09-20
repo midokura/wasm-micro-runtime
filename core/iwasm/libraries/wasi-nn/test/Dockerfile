@@ -1,4 +1,5 @@
 FROM ubuntu:22.04
+
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
@@ -11,17 +12,17 @@ RUN wget -q https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-1
 
 WORKDIR /home/wamr
 
-# COPY core core
-# COPY build-scripts build-scripts
-# COPY product-mini product-mini
+COPY core core
+COPY build-scripts build-scripts
+COPY product-mini product-mini
 
-# WORKDIR /home/wamr/core/iwasm/libraries/wasi-nn/test/build
+WORKDIR /home/wamr/core/iwasm/libraries/wasi-nn/test/build
 
-# RUN cmake ..
-# RUN make -j
+RUN cmake ..
+RUN make -j
 
-# WORKDIR /home/wamr/core/iwasm/libraries/wasi-nn/test
+WORKDIR /home/wamr/core/iwasm/libraries/wasi-nn/test
 
-# RUN build.sh
+RUN build.sh
 
-# RUN build/iwasm testapp.wasm
+RUN build/iwasm test_tensorflow.wasm
