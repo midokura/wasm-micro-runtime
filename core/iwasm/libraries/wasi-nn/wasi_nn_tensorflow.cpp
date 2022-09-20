@@ -15,6 +15,8 @@ enum Idx { GRAPH = 0, GRAPH_SIZE = 1 };
 std::unique_ptr<tflite::Interpreter> interpreter = NULL;
 std::unique_ptr<tflite::FlatBufferModel> model = NULL;
 
+char *model_pointer = NULL;
+
 uint32_t
 _load(graph_builder_array builder, graph_encoding encoding)
 {
@@ -25,13 +27,16 @@ _load(graph_builder_array builder, graph_encoding encoding)
 
     uint32_t *size = (uint32_t *)builder[Idx::GRAPH_SIZE];
 
+    printf("Size %ld\n", *size);
     tflite::ErrorReporter *error_reporter;
 
+    model_pointer = (char *)malloc(*size);
+    memcpy(model_pointer, (char *)builder[Idx::GRAPH], *size);
     model = tflite::FlatBufferModel::BuildFromBuffer(
         (const char *)builder[Idx::GRAPH], *size, error_reporter);
 
     if (model == nullptr) {
-        printf("failure: null model \n");
+        printf("failure: null model. error reported: %s \n", error_reporter);
         return missing_memory;
     }
 
@@ -94,11 +99,10 @@ uint32_t
 _get_output(graph_execution_context context, uint32_t index,
             uint8_t *out_tensor, buffer_size out_size)
 {
-    printf("out size : %d \n", out_size);
+    printf("out size max_size: %ld \n", out_size);
 
     int num_output_tensors = interpreter->outputs().size();
     printf("num tensors : %d \n", num_output_tensors);
-
 
     uint32_t elems[num_output_tensors];
     uint32_t total_elems = 0;
@@ -123,12 +127,13 @@ _get_output(graph_execution_context context, uint32_t index,
     int offset = 0;
     for (int i = 0; i < num_output_tensors; ++i) {
         int dims = (int)elems[i];
+        assert(offset + dims <= out_size);
         float *tensor = interpreter->typed_output_tensor<float>(i);
-        for (int j =0 ; j<dims ; j++)
-        {
+        for (int j = 0; j < dims; j++) {
             printf("output : %f \n", tensor[j]);
         }
-        memcpy(&out_tensor[offset], tensor, sizeof(float) * dims);
+        memcpy(&out_tensor[offset * sizeof(float)], tensor,
+               sizeof(float) * dims);
         offset += dims;
     }
 

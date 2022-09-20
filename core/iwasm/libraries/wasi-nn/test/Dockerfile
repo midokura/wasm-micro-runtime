@@ -1,15 +1,27 @@
 FROM ubuntu:22.04
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
-    cmake build-essential git
+    cmake build-essential git wget
+
+RUN wget -q https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-14/wasi-sdk-14.0-linux.tar.gz && \
+    tar xf wasi-sdk-*-linux.tar.gz -C /opt && rm -f wasi-sdk-*-linux.tar.gz && \
+    mv /opt/wasi-sdk-14.0 /opt/wasi-sdk
+
 
 WORKDIR /home/wamr
 
-COPY core core
-COPY build-scripts build-scripts
-COPY product-mini product-mini
+# COPY core core
+# COPY build-scripts build-scripts
+# COPY product-mini product-mini
 
-WORKDIR /home/wamr/core/iwasm/libraries/wasi-nn/test/build
+# WORKDIR /home/wamr/core/iwasm/libraries/wasi-nn/test/build
 
-RUN cmake ..
+# RUN cmake ..
+# RUN make -j
 
+# WORKDIR /home/wamr/core/iwasm/libraries/wasi-nn/test
+
+# RUN build.sh
+
+# RUN build/iwasm testapp.wasm

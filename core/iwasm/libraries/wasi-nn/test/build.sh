@@ -6,9 +6,10 @@
 #!/bin/bash
 
 # use WAMR SDK to build out the .wasm binary
+set -e
 /opt/wasi-sdk/bin/clang     \
-        -Wl,--allow-undefined \
-        -Wl,--strip-all,--no-entry \
-        --sysroot=/opt/wasi-sdk/share/wasi-sysroot/ \
-		-I/home/ahmedounet/Desktop/wasi_nn_tflite/wasm-micro-runtime/core/iwasm/libraries/wasi-nn \
-        -o testapp.wasm testapp.c
+    -Wl,--allow-undefined \
+    -Wl,--strip-all,--no-entry \
+    --sysroot=/opt/wasi-sdk/share/wasi-sysroot/ \
+    -I/home/wamr/core/iwasm/libraries/wasi-nn \
+    -o testapp.wasm testapp.c

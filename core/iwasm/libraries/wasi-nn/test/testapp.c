@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2019 Intel Corporation.  All rights reserved.
- * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,6 +15,14 @@
 #define INPUT_SIZE 25
 
 #define EPSILON 1e-8
+#define MAX_OUTPUT_TENSOR_SIZE 200
+#define MAX_MODEL_SIZE 85000000
+
+typedef struct {
+    float *input_tensor;
+    uint32_t *dim;
+    uint32_t elements;
+} input_info;
 
 void
 my_load(char *model_name)
@@ -89,7 +92,7 @@ my_allocate(graph graph)
 
 void
 my_output(graph_execution_context context, uint32_t index, float *out_tensor,
-          int out_size)
+          uint32_t out_size)
 {
     printf("Retrieving output \n");
     get_output(context, index, out_tensor, out_size);
@@ -113,147 +116,143 @@ my_inference(float *input, uint32_t *input_size, int *output_size,
 
     uint32_t index;
 
-    float *out_tensor = (float *)malloc(sizeof(float) * 5);
+    float *out_tensor = (float *)malloc(sizeof(float) * MAX_OUTPUT_TENSOR_SIZE);
 
-    my_output(context, index, out_tensor, 5 * sizeof(float));
+    my_output(context, index, out_tensor, MAX_OUTPUT_TENSOR_SIZE);
 
     printf("finished\n");
 
     return out_tensor;
 }
 
+input_info
+create_input(int N, int *dims)
+{
+    input_info input = { .dim = NULL, .input_tensor = NULL, .elements = 1 };
+
+    input.dim = malloc(N * sizeof(uint32_t));
+    for (int i = 0; i < N; ++i) {
+        input.dim[i] = dims[i];
+        input.elements *= dims[i];
+    }
+
+    input.input_tensor = malloc(input.elements * sizeof(float));
+    for (int i = 0; i < input.elements; ++i)
+        input.input_tensor[i] = i;
+
+    return input;
+}
+
+// TESTS
+
 void
 test_sum()
 {
+    int N = 4;
+    int dims[] = { 1, 5, 5, 1 };
+    input_info input = create_input(4, dims);
+
     int output_size = 0;
+    float *output = my_inference(input.input_tensor, input.dim, &output_size,
+                                 "models/sum.tflite");
 
-    uint32_t *dim = malloc(4 * sizeof(uint32_t));
+    assert(abs(output[0] - 300.0) < EPSILON);
 
-    dim[0] = 1;
-    dim[1] = 5;
-    dim[2] = 5;
-    dim[3] = 1;
-
-    float *input_tensor = malloc(INPUT_SIZE * sizeof(float));
-
-    for (int i = 0; i < INPUT_SIZE; i++) {
-
-        input_tensor[i] = 1;
-    }
-
-    float *output =
-        my_inference(input_tensor, dim, &output_size, "models/sum.tflite");
-
-    assert(abs(output[0] - 25.0) < EPSILON);
+    free(input.dim);
+    free(input.input_tensor);
+    free(output);
 }
 
 void
 test_max()
 {
+    int N = 4;
+    int dims[] = { 1, 5, 5, 1 };
+    input_info input = create_input(4, dims);
+
     int output_size = 0;
-    uint32_t *dim = malloc(4 * sizeof(uint32_t));
-
-    dim[0] = 1;
-    dim[1] = 5;
-    dim[2] = 5;
-    dim[3] = 1;
-
-    float *input_tensor = malloc(INPUT_SIZE * sizeof(float));
-
-    for (int i = 0; i < INPUT_SIZE; i++) {
-
-        input_tensor[i] = i;
-    }
-
-    float *output =
-        my_inference(input_tensor, dim, &output_size, "models/max.tflite");
+    float *output = my_inference(input.input_tensor, input.dim, &output_size,
+                                 "models/max.tflite");
 
     printf("max is: %f \n ", output[0]);
-
     assert(abs(output[0] - 24.0) < EPSILON);
+
+    free(input.dim);
+    free(input.input_tensor);
+    free(output);
 }
 
 void
 test_average()
 {
+    int N = 4;
+    int dims[] = { 1, 5, 5, 1 };
+    input_info input = create_input(4, dims);
+
     int output_size = 0;
-    uint32_t *dim = malloc(4 * sizeof(uint32_t));
-
-    dim[0] = 1;
-    dim[1] = 5;
-    dim[2] = 5;
-    dim[3] = 1;
-
-    float *input_tensor = malloc(INPUT_SIZE * sizeof(float));
-
-    for (int i = 0; i < INPUT_SIZE; i++) {
-
-        input_tensor[i] = i;
-    }
-
-    float *output =
-        my_inference(input_tensor, dim, &output_size, "models/average.tflite");
+    float *output = my_inference(input.input_tensor, input.dim, &output_size,
+                                 "models/average.tflite");
 
     printf("average is: %f \n ", output[0]);
-
     assert(abs(output[0] - 12.0) < EPSILON);
+
+    free(input.dim);
+    free(input.input_tensor);
+    free(output);
 }
 
 void
 test_mult_dimensions()
 {
+    int N = 4;
+    int dims[] = { 1, 3, 3, 1 };
+    input_info input = create_input(4, dims);
+
     int output_size = 0;
-    uint32_t *dim = malloc(4 * sizeof(uint32_t));
-
-    dim[0] = 1;
-    dim[1] = 3;
-    dim[2] = 3;
-    dim[3] = 1;
-
-    float *input_tensor = malloc(9 * sizeof(float));
-
-    for (int i = 0; i < 9; i++) {
-
-        input_tensor[i] = i;
-    }
-
-    float *output =
-        my_inference(input_tensor, dim, &output_size, "models/mult_dim.tflite");
+    float *output = my_inference(input.input_tensor, input.dim, &output_size,
+                                 "models/mult_dim.tflite");
 
     for (int i = 0; i < 9; i++) {
         printf(" %f  \n ", output[i]);
     }
+
+    free(input.dim);
+    free(input.input_tensor);
+    free(output);
 }
 
 void
 test_mult_outputs()
 {
+    int N = 4;
+    int dims[] = { 1, 4, 4, 1 };
+    input_info input = create_input(4, dims);
+
     int output_size = 0;
-    uint32_t *dim = malloc(4 * sizeof(uint32_t));
+    float *output = my_inference(input.input_tensor, input.dim, &output_size,
+                                 "models/mult_out.tflite");
 
-    dim[0] = 1;
-    dim[1] = 6;
-    dim[2] = 6;
-    dim[3] = 1;
-
-    float *input_tensor = malloc(INPUT_SIZE * sizeof(float));
-
-    for (int i = 0; i < INPUT_SIZE; i++) {
-
-        input_tensor[i] = i;
+    for (int i = 0; i < 13; i++) {
+        printf(" %f  \n ", output[i]);
     }
 
-    float *output =
-        my_inference(input_tensor, dim, &output_size, "models/mult_out.tflite");
+    free(input.dim);
+    free(input.input_tensor);
+    free(output);
 }
 
 int
 main()
 {
+    printf("################### Testing sum...\n");
     test_sum();
+    printf("################### Testing max...\n");
     test_max();
+    printf("################### Testing average...\n");
     test_average();
+    printf("################### Testing multiple dimensions...\n");
     test_mult_dimensions();
+    printf("################### Testing multiple outputs...\n");
     test_mult_outputs();
 
     return 0;

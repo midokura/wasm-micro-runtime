@@ -22,10 +22,8 @@ _get_output(graph_execution_context context, uint32_t index,
 uint32_t
 _compute(graph_execution_context context);
 
-
 uint32_t
 _init_execution_context(graph graph);
-
 
 #ifdef __cplusplus
 }
