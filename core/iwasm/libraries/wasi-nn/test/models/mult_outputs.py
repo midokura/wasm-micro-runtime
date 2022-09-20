@@ -1,15 +1,11 @@
 import tensorflow as tf
 import numpy as np
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation, Flatten
-from keras.layers import Convolution2D, MaxPooling2D, AveragePooling2D, Conv2D
-from keras.utils import np_utils
+from keras.layers import AveragePooling2D, Conv2D
 
 from tensorflow.keras import Input, Model
 
 from utils import save_model
 
-import pathlib
 
 inputs = Input(shape=(4, 4, 1))
 

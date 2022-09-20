@@ -4,7 +4,6 @@
 cmake_minimum_required (VERSION 2.8)
 
 project (iwasm)
-# set (CMAKE_VERBOSE_MAKEFILE 1)
 
 set (WAMR_BUILD_PLATFORM "linux")
 
@@ -13,7 +12,6 @@ set (WAMR_BUILD_WASI_NN  1)
 # Reset default linker flags
 set (CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 set (CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
-
 set (CMAKE_C_STANDARD 99)
 
 # Set WAMR_BUILD_TARGET, currently values supported:
@@ -108,45 +106,14 @@ if (COLLECT_CODE_COVERAGE EQUAL 1)
 endif ()
 
 set (WAMR_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../..)
-message(${WAMR_ROOT_DIR})
+
 include (${WAMR_ROOT_DIR}/build-scripts/runtime_lib.cmake)
+
 add_library(vmlib ${WAMR_RUNTIME_LIB_SOURCE})
-
-set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--gc-sections -pie -fPIE")
-
-set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wformat -Wformat-security -Wshadow")
-# set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wconversion -Wsign-conversion")
-
-if (WAMR_BUILD_TARGET MATCHES "X86_.*" OR WAMR_BUILD_TARGET STREQUAL "AMD_64")
-  if (NOT (CMAKE_C_COMPILER MATCHES ".*clang.*" OR CMAKE_C_COMPILER_ID MATCHES ".*Clang"))
-    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mindirect-branch-register")
-    # UNDEFINED BEHAVIOR, refer to https://en.cppreference.com/w/cpp/language/ub
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT WAMR_BUILD_JIT EQUAL 1)
-      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=undefined \
-                                          -fno-sanitize=bounds,bounds-strict,alignment \
-                                          -fno-sanitize-recover")
-    endif()
-  else ()
-    # UNDEFINED BEHAVIOR, refer to https://en.cppreference.com/w/cpp/language/ub
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT WAMR_BUILD_JIT EQUAL 1)
-      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=undefined \
-                                          -fno-sanitize=bounds,alignment \
-                                          -fno-sanitize-recover")
-    endif()
-  endif ()
-endif ()
-
-# The following flags are to enhance security, but it may impact performance,
-# we disable them by default.
-#if (WAMR_BUILD_TARGET MATCHES "X86_.*" OR WAMR_BUILD_TARGET STREQUAL "AMD_64")
-#  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ftrapv -D_FORTIFY_SOURCE=2")
-#endif ()
-#set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fstack-protector-strong --param ssp-buffer-size=4")
-#set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-z,noexecstack,-z,relro,-z,now")
 
 include (${SHARED_DIR}/utils/uncommon/shared_uncommon.cmake)
 
-add_executable (iwasm ${WAMR_ROOT_DIR}/product-mini/platforms/linux/main.c ${UNCOMMON_SHARED_SOURCE})
+add_executable (iwasm ${WAMR_ROOT_DIR}/product-mini/platforms/${WAMR_BUILD_PLATFORM}/main.c ${UNCOMMON_SHARED_SOURCE})
 
 install (TARGETS iwasm DESTINATION bin)
 

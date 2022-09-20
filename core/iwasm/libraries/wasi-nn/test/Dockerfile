@@ -26,4 +26,4 @@ WORKDIR /home/wamr/core/iwasm/libraries/wasi-nn/test
 
 RUN ./build.sh
 
-RUN ./build/iwasm --dir=. test_tensorflow.wasm
+ENTRYPOINT [ "./build/iwasm",  "--dir=.", "test_tensorflow.wasm" ]

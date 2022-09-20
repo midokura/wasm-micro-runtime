@@ -1,8 +1,4 @@
 import tensorflow as tf
-import numpy as np
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation, Flatten
-from keras.layers import Convolution2D, MaxPooling2D
 
 from utils import save_model
 
@@ -13,6 +9,6 @@ model = tf.keras.Sequential([
 
 ])
 
-#Export model to tflite 
+# Export model to tflite
 
 save_model(model, "max.tflite")
