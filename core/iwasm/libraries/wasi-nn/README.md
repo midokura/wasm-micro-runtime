@@ -34,3 +34,7 @@ If all the tests have run properly you will the the following message in the ter
 ```
 Tests: passed!
 ```
+
+# What is missing
+
+# Known issues
