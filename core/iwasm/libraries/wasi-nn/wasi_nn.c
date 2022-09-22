@@ -1,4 +1,3 @@
-#include "wasi_nn.h"
 #include <stdio.h>
 #include <assert.h>
 #include <errno.h>
@@ -7,7 +6,12 @@
 
 #include "wasm_export.h"
 
+#include "wasi_nn_native.h"
 #include "wasi_nn_tensorflow.hpp"
+#include "logger.h"
+
+static uint8_t is_initialized = 0;
+static graph_encoding _encoding;
 
 /**
  * @brief loader of tensorflow
@@ -17,7 +21,7 @@
 void
 load_tensorflow(wasm_module_inst_t instance, graph_builder_array builder)
 {
-    printf("Loading tensorflow...\n");
+    NN_DBG_PRINTF("Loading tensorflow...");
     for (int i = 0; i < 2; ++i)
         builder[i] = (graph_builder)wasm_runtime_addr_app_to_native(instance,
                                                                     builder[i]);
@@ -35,10 +39,14 @@ flatten_dimensions(uint32_t *dim)
     return res;
 }
 
+/* WASI-NN implementation */
+
 uint32_t
-wasi_nn_load(wasm_exec_env_t exec_env, uint32_t builder, uint32_t encoding)
+wasi_nn_load(wasm_exec_env_t exec_env, uint32_t builder, uint32_t encoding,
+             uint32_t target, uint32_t graph)
 {
-    printf("Inside wasi_nn_load!\n\n");
+    NN_DBG_PRINTF("Inside wasi_nn_load.");
+    _encoding = (graph_encoding)encoding;
     wasm_module_inst_t instance = wasm_runtime_get_module_inst(exec_env);
     graph_builder_array buf =
         (graph_builder_array)wasm_runtime_addr_app_to_native(instance, builder);
@@ -51,7 +59,8 @@ wasi_nn_load(wasm_exec_env_t exec_env, uint32_t builder, uint32_t encoding)
         case onnx:
             return invalid_argument;
     }
-    return _load(buf, (graph_encoding)encoding);
+    is_initialized = 1;
+    return _load(buf, _encoding);
 }
 
 uint32_t
@@ -108,6 +117,8 @@ wasi_nn_compute(wasm_exec_env_t exec_env, graph_execution_context context)
 
     return _compute(context);
 }
+
+/* Register native symbols and utility */
 
 /* clang-format off */
 #define REG_NATIVE_FUNC(func_name, signature) \

@@ -2,8 +2,15 @@
 #define WASI_NN_TENSORFLOW_HPP
 
 #include <stdio.h>
+#include <tensorflow/lite/interpreter.h>
+#include <tensorflow/lite/kernels/register.h>
+#include <tensorflow/lite/model.h>
+#include <tensorflow/lite/optional_debug_tools.h>
+#include <tensorflow/lite/error_reporter.h>
+
 
 #include "wasi_nn.h"
+#include "logger.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,13 +1,5 @@
 #include "wasi_nn_tensorflow.hpp"
 
-#include <iostream>
-
-#include <tensorflow/lite/interpreter.h>
-#include <tensorflow/lite/kernels/register.h>
-#include <tensorflow/lite/model.h>
-#include <tensorflow/lite/optional_debug_tools.h>
-#include <tensorflow/lite/error_reporter.h>
-
 enum Idx { GRAPH = 0, GRAPH_SIZE = 1 };
 
 #define DIM_SIZE 4
@@ -27,7 +19,7 @@ _load(graph_builder_array builder, graph_encoding encoding)
 
     uint32_t *size = (uint32_t *)builder[Idx::GRAPH_SIZE];
 
-    printf("Size %ld\n", *size);
+    NN_DBG_PRINTF("Size %ld", *size);
     tflite::ErrorReporter *error_reporter;
 
     model_pointer = (char *)malloc(*size);
@@ -36,7 +28,7 @@ _load(graph_builder_array builder, graph_encoding encoding)
         (const char *)builder[Idx::GRAPH], *size, error_reporter);
 
     if (model == nullptr) {
-        printf("failure: null model. error reported: %s \n", error_reporter);
+        NN_DBG_PRINTF("failure: null model. error reported: %s", error_reporter);
         return missing_memory;
     }
 
@@ -46,7 +38,7 @@ _load(graph_builder_array builder, graph_encoding encoding)
     tflite_builder(&interpreter);
 
     if (interpreter == nullptr) {
-        printf("failure: null interpreter \n");
+        NN_DBG_PRINTF("failure: null interpreter.");
         return missing_memory;
     }
 
@@ -99,10 +91,10 @@ uint32_t
 _get_output(graph_execution_context context, uint32_t index,
             uint8_t *out_tensor, buffer_size out_size)
 {
-    printf("out size max_size: %ld \n", out_size);
+    NN_DBG_PRINTF("out size max_size: %ld", out_size);
 
     int num_output_tensors = interpreter->outputs().size();
-    printf("num tensors : %d \n", num_output_tensors);
+    NN_DBG_PRINTF("num tensors: %d", num_output_tensors);
 
     uint32_t elems[num_output_tensors];
     uint32_t total_elems = 0;
@@ -111,7 +103,7 @@ _get_output(graph_execution_context context, uint32_t index,
         auto tensor = interpreter->output_tensor(i);
 
         if (tensor == NULL) {
-            printf("missing memory\n");
+            NN_DBG_PRINTF("missing memory");
             return missing_memory;
         }
 
@@ -130,7 +122,7 @@ _get_output(graph_execution_context context, uint32_t index,
         assert(offset + dims <= out_size);
         float *tensor = interpreter->typed_output_tensor<float>(i);
         for (int j = 0; j < dims; j++) {
-            printf("output : %f \n", tensor[j]);
+            NN_DBG_PRINTF("output: %f", tensor[j]);
         }
         memcpy(&out_tensor[offset * sizeof(float)], tensor,
                sizeof(float) * dims);
