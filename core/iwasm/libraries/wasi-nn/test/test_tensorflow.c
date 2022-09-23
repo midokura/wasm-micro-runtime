@@ -24,7 +24,7 @@ typedef struct {
 } input_info;
 
 void
-my_load(char *model_name)
+my_load(char *model_name, graph *graph)
 {
     printf("loading model\n");
     FILE *pFile = fopen(model_name, "r");
@@ -48,15 +48,16 @@ my_load(char *model_name)
 
     printf("I copied %ld elements\n", result);
 
-    uint32_t *size = malloc(sizeof(uint32_t));
-    *size = 85000000;
+    // graph_builder_array *arr = malloc(sizeof(graph_builder_array));
+    graph_builder_array arr;
 
-    graph_builder_array arr = malloc(sizeof(graph_builder) * 2);
+    arr.buf = (graph_builder_array*) malloc(sizeof(graph_builder));
+    arr.size = 1;
 
-    arr[0] = buffer;
-    arr[1] = (graph_builder)size;
+    arr.buf[0].buf = buffer;
+    arr.buf[0].size = result;
 
-    load(arr, 1);
+    load(&arr, tensorflow, cpu, graph);
 
     printf("loaded model successfully\n");
     fclose(pFile);
@@ -69,9 +70,19 @@ void
 my_input(float *input_tensor, uint32_t *dim)
 {
     printf("loading inputs\n");
+    tensor_dimensions dims;
+    dims.size = 4;
+    dims.buf = (uint32_t*)malloc(dims.size*sizeof(uint32_t));
 
-    set_input(0, 0, dim, 3, input_tensor);
+    tensor tensor;
+    tensor.dimensions = &dims;
+    for (int i = 0; i < tensor.dimensions->size; ++i)
+        tensor.dimensions->buf[i] = dim[i];
+    tensor.type = fp32;
+    tensor.data = input_tensor;
+    set_input(44, 0, &tensor);
 
+    free(tensor.dimensions->buf);
     printf("Success input loaded \n");
 }
 
@@ -85,8 +96,11 @@ my_compute(graph_execution_context context)
 void
 my_allocate(graph graph)
 {
-    printf("Allocating tensors \n");
-    init_execution_context(graph);
+    printf("Allocating tensors %d\n", graph);
+    graph_execution_context gec;
+    init_execution_context(graph, &gec);
+    printf("aaa\n");
+    printf("aaa %d\n", gec);
 }
 
 void
@@ -101,15 +115,16 @@ float *
 my_inference(float *input, uint32_t *input_size, int *output_size,
              char *model_name)
 {
-    graph graph;
     printf("end to end  \n");
 
-    my_load(model_name);
+    graph graph = 444;
+    my_load(model_name, &graph);
 
     my_allocate(graph);
 
     my_input(input, input_size);
 
+    printf("bbbbb\n");
     graph_execution_context context;
     my_compute(context);
 

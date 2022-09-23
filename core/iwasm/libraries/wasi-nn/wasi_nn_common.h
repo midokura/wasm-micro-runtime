@@ -1,6 +1,8 @@
 #ifndef WASI_NN_COMMON_H
 #define WASI_NN_COMMON_H
 
+#include <stdint.h>
+
 // The type of the elements in a tensor.
 typedef enum {
     fp16 = 0,
@@ -40,5 +42,11 @@ typedef enum {
     // Runtime Error.
     runtime_error,
 } error;
+
+// An execution graph for performing inference (i.e., a model).
+typedef uint32_t graph;
+
+// Bind a `graph` to the input and output tensors for an inference.
+typedef uint32_t graph_execution_context;
 
 #endif

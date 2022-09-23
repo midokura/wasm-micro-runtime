@@ -19,11 +19,11 @@ RUN pip3 install -r core/iwasm/libraries/wasi-nn/test/requirements.txt
 
 WORKDIR /home/wamr/core/iwasm/libraries/wasi-nn/test/build
 
-RUN cmake ..
-RUN make -j
+# RUN cmake ..
+# RUN make -j
 
-WORKDIR /home/wamr/core/iwasm/libraries/wasi-nn/test
+# WORKDIR /home/wamr/core/iwasm/libraries/wasi-nn/test
 
-RUN ./build.sh
+# RUN ./build.sh
 
 ENTRYPOINT [ "./build/iwasm",  "--dir=.", "test_tensorflow.wasm" ]

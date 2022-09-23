@@ -9,9 +9,9 @@
 
 # TFLite models to use in the tests
 
-cd models
-python3 average.py
-python3 max.py
-python3 mult_dimension.py
-python3 mult_outputs.py
-python3 sum.py
+# cd models
+# python3 average.py
+# python3 max.py
+# python3 mult_dimension.py
+# python3 mult_outputs.py
+# python3 sum.py
