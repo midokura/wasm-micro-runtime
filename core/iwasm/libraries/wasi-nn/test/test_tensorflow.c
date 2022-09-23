@@ -26,7 +26,6 @@ typedef struct {
 void
 my_load(char *model_name, graph *graph)
 {
-    printf("loading model\n");
     FILE *pFile = fopen(model_name, "r");
 
     assert(pFile != NULL);
@@ -46,9 +45,6 @@ my_load(char *model_name, graph *graph)
 
     result = fread(buffer, 1, lsize, pFile);
 
-    printf("I copied %ld elements\n", result);
-
-    // graph_builder_array *arr = malloc(sizeof(graph_builder_array));
     graph_builder_array arr;
 
     arr.buf = (graph_builder_array*) malloc(sizeof(graph_builder));
@@ -59,17 +55,13 @@ my_load(char *model_name, graph *graph)
 
     load(&arr, tensorflow, cpu, graph);
 
-    printf("loaded model successfully\n");
     fclose(pFile);
     free(buffer);
-
-    return;
 }
 
 void
 my_input(float *input_tensor, uint32_t *dim)
 {
-    printf("loading inputs\n");
     tensor_dimensions dims;
     dims.size = 4;
     dims.buf = (uint32_t*)malloc(dims.size*sizeof(uint32_t));
@@ -83,31 +75,25 @@ my_input(float *input_tensor, uint32_t *dim)
     set_input(44, 0, &tensor);
 
     free(tensor.dimensions->buf);
-    printf("Success input loaded \n");
 }
 
 void
 my_compute(graph_execution_context context)
 {
-    printf("running model \n");
     compute(context);
 }
 
 void
 my_allocate(graph graph)
 {
-    printf("Allocating tensors %d\n", graph);
     graph_execution_context gec;
     init_execution_context(graph, &gec);
-    printf("aaa\n");
-    printf("aaa %d\n", gec);
 }
 
 void
 my_output(graph_execution_context context, uint32_t index, float *out_tensor,
-          uint32_t out_size)
+          uint32_t *out_size)
 {
-    printf("Retrieving output \n");
     get_output(context, index, out_tensor, out_size);
 }
 
@@ -115,8 +101,6 @@ float *
 my_inference(float *input, uint32_t *input_size, int *output_size,
              char *model_name)
 {
-    printf("end to end  \n");
-
     graph graph = 444;
     my_load(model_name, &graph);
 
@@ -124,20 +108,18 @@ my_inference(float *input, uint32_t *input_size, int *output_size,
 
     my_input(input, input_size);
 
-    printf("bbbbb\n");
     graph_execution_context context;
     my_compute(context);
 
-    uint32_t index;
-
     float *out_tensor = (float *)malloc(sizeof(float) * MAX_OUTPUT_TENSOR_SIZE);
 
-    my_output(context, index, out_tensor, MAX_OUTPUT_TENSOR_SIZE);
-
-    printf("finished\n");
-
+    uint32_t index;
+    uint32_t out_size = MAX_OUTPUT_TENSOR_SIZE;
+    my_output(context, index, out_tensor, &out_size);
     return out_tensor;
 }
+
+// UTILS
 
 input_info
 create_input(int N, int *dims)
@@ -191,7 +173,7 @@ test_max()
 
     // TODO: assert(output_size == 1);
     assert(abs(output[0] - 24.0) < EPSILON);
-    printf("max is: %f\n ", output[0]);
+    printf("Result: max is %f\n", output[0]);
 
     free(input.dim);
     free(input.input_tensor);
@@ -211,7 +193,7 @@ test_average()
 
     // TODO: assert(output_size == 1);
     assert(abs(output[0] - 12.0) < EPSILON);
-    printf("average is: %f\n ", output[0]);
+    printf("Result: average is %f\n", output[0]);
 
     free(input.dim);
     free(input.input_tensor);

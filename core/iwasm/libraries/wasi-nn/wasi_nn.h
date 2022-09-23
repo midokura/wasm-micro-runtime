@@ -96,16 +96,16 @@ set_input(graph_execution_context ctx, uint32_t index, tensor *tensor);
 error
 compute(graph_execution_context ctx);
 
-// /**
-//  * @brief Extract the outputs after inference.
-//  * 
-//  * @param ctx               Execution context.
-//  * @param index             Index of the output tensor.
-//  * @param tensor_data       Address 
-//  * @param tensor_data_size  `tensor_data` maximum size.
-//  * @return error            Execution status.
-//  */
-// error
-// get_output(graph_execution_context ctx, uint32_t index, tensor_data tensor_data, uint32_t tensor_data_size);
+/**
+ * @brief Extract the outputs after inference.
+ * 
+ * @param ctx               Execution context.
+ * @param index             Index of the output tensor.
+ * @param tensor_data       Address 
+ * @param tensor_data_size  `tensor_data` maximum size.
+ * @return error            Execution status.
+ */
+error
+get_output(graph_execution_context ctx, uint32_t index, tensor_data data, uint32_t *data_size);
 
 #endif
