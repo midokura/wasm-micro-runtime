@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 
-
 #include "wasi_nn.h"
 #include "logger.h"
 
@@ -12,7 +11,8 @@ extern "C" {
 #endif
 
 error
-_load(graph_builder_array builder, graph_encoding encoding, execution_target target, graph *graph);
+_load(graph_builder_array builder, graph_encoding encoding,
+      execution_target target, graph *graph);
 
 error
 _init_execution_context(graph graph);
@@ -24,7 +24,8 @@ error
 _compute(graph_execution_context ctx);
 
 error
-_get_output(graph_execution_context context, uint32_t index,  tensor_data data, uint32_t *data_size);
+_get_output(graph_execution_context context, uint32_t index, tensor_data data,
+            uint32_t *data_size);
 
 #ifdef __cplusplus
 }

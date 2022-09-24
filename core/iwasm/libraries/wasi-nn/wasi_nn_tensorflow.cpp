@@ -16,7 +16,8 @@ std::unique_ptr<tflite::FlatBufferModel> model = NULL;
 char *model_pointer = NULL;
 
 error
-_load(graph_builder_array builder, graph_encoding encoding, execution_target target, graph *graph)
+_load(graph_builder_array builder, graph_encoding encoding,
+      execution_target target, graph *graph)
 {
     if (encoding != tensorflow) {
         return invalid_argument;
@@ -30,9 +31,11 @@ _load(graph_builder_array builder, graph_encoding encoding, execution_target tar
     model_pointer = (char *)malloc(size);
     memcpy(model_pointer, builder.buf[0].buf, size);
 
-    model = tflite::FlatBufferModel::BuildFromBuffer(model_pointer, size, error_reporter);
+    model = tflite::FlatBufferModel::BuildFromBuffer(model_pointer, size,
+                                                     error_reporter);
     if (model == NULL) {
-        NN_ERR_PRINTF("failure: null model. error reported: %s", error_reporter);
+        NN_ERR_PRINTF("failure: null model. error reported: %s",
+                      error_reporter);
         return missing_memory;
     }
 
@@ -84,11 +87,12 @@ _compute(graph_execution_context ctx)
 }
 
 error
-_get_output(graph_execution_context context, uint32_t index,
-            tensor_data data, uint32_t *data_size)
+_get_output(graph_execution_context context, uint32_t index, tensor_data data,
+            uint32_t *data_size)
 {
     int num_output_tensors = interpreter->outputs().size();
-    NN_DBG_PRINTF("Output tensor max size (%ld), number of tensors (%ld)", *data_size, num_output_tensors);
+    NN_DBG_PRINTF("Output tensor max size (%ld), number of tensors (%ld)",
+                  *data_size, num_output_tensors);
 
     uint32_t elems[num_output_tensors];
     uint32_t total_elems = 0;
@@ -118,10 +122,9 @@ _get_output(graph_execution_context context, uint32_t index,
         for (int j = 0; j < dims; j++) {
             NN_DBG_PRINTF("output: %f", tensor[j]);
         }
-        memcpy(&data[offset * sizeof(float)], tensor,
-               sizeof(float) * dims);
+        memcpy(&data[offset * sizeof(float)], tensor, sizeof(float) * dims);
         offset += dims;
     }
-
+    *data_size = total_elems;
     return success;
 }
