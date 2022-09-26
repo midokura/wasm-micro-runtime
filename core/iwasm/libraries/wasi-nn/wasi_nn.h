@@ -5,8 +5,8 @@
 
 /**
  * Following definition from:
- * [Apr 6, 2022]
- * https://github.com/WebAssembly/wasi-nn/blob/c557b2e9f84b6630f13b3185b43607f0388343b2/phases/ephemeral/witx/wasi_ephemeral_nn.witx
+ * [Aug 10th, 2022]
+ * https://github.com/WebAssembly/wasi-nn/blob/e5e1a6c31f424c7cd63026cd270e9746775675a0/wasi-nn.wit.md
  */
 
 /* The graph initialization data. */
@@ -67,7 +67,7 @@ typedef struct {
  */
 error
 load(graph_builder_array *builder, graph_encoding encoding,
-     execution_target target, graph *graph);
+     execution_target target, graph *graph) __attribute__((import_module("wasi_nn")));
 
 /**
  * @brief Create an execution instance of a loaded graph.
@@ -78,7 +78,7 @@ load(graph_builder_array *builder, graph_encoding encoding,
  * @return error
  */
 error
-init_execution_context(graph graph, graph_execution_context *ctx);
+init_execution_context(graph graph, graph_execution_context *ctx) __attribute__((import_module("wasi_nn")));
 
 /**
  * @brief Define the inputs to use for inference.
@@ -89,7 +89,7 @@ init_execution_context(graph graph, graph_execution_context *ctx);
  * @return error    Execution status.
  */
 error
-set_input(graph_execution_context ctx, uint32_t index, tensor *tensor);
+set_input(graph_execution_context ctx, uint32_t index, tensor *tensor) __attribute__((import_module("wasi_nn")));
 
 /**
  * @brief Compute the inference on the given inputs.
@@ -98,7 +98,7 @@ set_input(graph_execution_context ctx, uint32_t index, tensor *tensor);
  * @return error    Execution status.
  */
 error
-compute(graph_execution_context ctx);
+compute(graph_execution_context ctx) __attribute__((import_module("wasi_nn")));
 
 /**
  * @brief Extract the outputs after inference.
@@ -111,6 +111,6 @@ compute(graph_execution_context ctx);
  */
 error
 get_output(graph_execution_context ctx, uint32_t index, tensor_data data,
-           uint32_t *data_size);
+           uint32_t *data_size) __attribute__((import_module("wasi_nn")));
 
 #endif

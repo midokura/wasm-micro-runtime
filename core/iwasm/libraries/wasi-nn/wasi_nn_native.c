@@ -6,6 +6,7 @@
 
 #include "wasm_export.h"
 
+#include "wasi_nn.h"
 #include "wasi_nn_tensorflow.hpp"
 #include "logger.h"
 
@@ -109,22 +110,22 @@ wasi_nn_init_execution_context(wasm_exec_env_t exec_env, graph graph,
 
 error
 wasi_nn_set_input(wasm_exec_env_t exec_env, graph_execution_context ctx,
-                  uint32_t index, tensor_wasm *t)
+                  uint32_t index, tensor_wasm *input_tensor)
 {
     NN_DBG_PRINTF("Running wasi_nn_set_input [ctx=%d, index=%d]...", ctx,
                   index);
     wasm_module_inst_t instance = wasm_runtime_get_module_inst(exec_env);
 
-    if (!wasm_runtime_validate_native_addr(instance, t, sizeof(tensor_wasm)))
+    if (!wasm_runtime_validate_native_addr(instance, input_tensor, sizeof(tensor_wasm)))
         return invalid_argument;
 
-    if (!wasm_runtime_validate_app_addr(instance, t->dimensions_offset,
+    if (!wasm_runtime_validate_app_addr(instance, input_tensor->dimensions_offset,
                                         sizeof(uint32_t)))
         return invalid_argument;
 
     tensor_dimensions_wasm *dimensions_w =
         (tensor_dimensions_wasm *)wasm_runtime_addr_app_to_native(
-            instance, t->dimensions_offset);
+            instance, input_tensor->dimensions_offset);
 
     if (!wasm_runtime_validate_app_addr(instance, dimensions_w->buf_offset,
                                         dimensions_w->size * sizeof(uint32_t)))
@@ -142,16 +143,16 @@ wasi_nn_set_input(wasm_exec_env_t exec_env, graph_execution_context ctx,
         NN_DBG_PRINTF("Dimension %d: %d", i, dimensions.buf[i]);
         total_elements *= dimensions.buf[i];
     }
-    NN_DBG_PRINTF("Tensor type: %d", t->type);
+    NN_DBG_PRINTF("Tensor type: %d", input_tensor->type);
 
-    if (!wasm_runtime_validate_app_addr(instance, t->data_offset,
+    if (!wasm_runtime_validate_app_addr(instance, input_tensor->data_offset,
                                         total_elements))
         return invalid_argument;
 
-    tensor tensor = { .type = t->type,
+    tensor tensor = { .type = input_tensor->type,
                       .dimensions = &dimensions,
                       .data = (uint8_t *)wasm_runtime_addr_app_to_native(
-                          instance, t->data_offset) };
+                          instance, input_tensor->data_offset) };
 
     error res = _set_input(ctx, index, &tensor);
     NN_DBG_PRINTF("wasi_nn_set_input finished with status %d", res);
@@ -169,13 +170,13 @@ wasi_nn_compute(wasm_exec_env_t exec_env, graph_execution_context ctx)
 
 error
 wasi_nn_get_output(wasm_exec_env_t exec_env, graph_execution_context ctx,
-                   uint32_t index, tensor_data data, uint32_t *data_size)
+                   uint32_t index, tensor_data output_tensor, uint32_t *output_tensor_size)
 {
     NN_DBG_PRINTF("Running wasi_nn_get_output [ctx=%d, index=%d]...", ctx,
                   index);
-    error res = _get_output(ctx, index, data, data_size);
+    error res = _get_output(ctx, index, output_tensor, output_tensor_size);
     NN_DBG_PRINTF("wasi_nn_get_output finished with status %d [data_size=%d]",
-                  res, *data_size);
+                  res, *output_tensor_size);
     return res;
 }
 
