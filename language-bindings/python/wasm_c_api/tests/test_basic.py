@@ -12,7 +12,7 @@ import ctypes as c
 import unittest
 from venv import create
 
-from wamr.ffi import *
+from wamr.wasm_c_api.ffi import *
 
 # It is a module likes:
 # (module
