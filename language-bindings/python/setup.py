@@ -26,5 +26,5 @@ setup(
     author_email="hello@bytecodealliance.org",
     url="https://github.com/bytecodealliance/wamr-python",
     license=license,
-    packages=["wamr"],
+    include_package_data=True
 )
