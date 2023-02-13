@@ -15,5 +15,5 @@ python samples/main.py
 Run the following command,
 
 ```sh
-ctypesgen ../ppl-wasm/submodules/wasm-micro-runtime/core/iwasm/include/wasm_export.h -l libiwasm.so -o libiwasm.py
+ctypesgen ../../../../core/iwasm/include/wasm_export.h -l ../libs/libiwasm.so -o iwasm.py
 ```
