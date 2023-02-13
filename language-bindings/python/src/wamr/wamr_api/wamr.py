@@ -1,3 +1,6 @@
+# Copyright (C) 2019 Intel Corporation.  All rights reserved.
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
 from ctypes import Array
 from ctypes import c_char
 from ctypes import c_uint
