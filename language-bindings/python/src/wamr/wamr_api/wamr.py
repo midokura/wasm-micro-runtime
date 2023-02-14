@@ -1,15 +1,19 @@
 # Copyright (C) 2019 Intel Corporation.  All rights reserved.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-from ctypes import Array
+from ctypes import CFUNCTYPE, Array, byref
 from ctypes import c_char
 from ctypes import c_uint
 from ctypes import c_uint8
+from ctypes import c_int32
+from ctypes import c_char_p
 from ctypes import c_void_p
 from ctypes import cast
 from ctypes import create_string_buffer
 from ctypes import POINTER
 from ctypes import pointer
+from typing import Any
+from wamr.wamr_api.iwasm import String
 
 from wamr.wamr_api.iwasm import Alloc_With_Pool
 from wamr.wamr_api.iwasm import RuntimeInitArgs
@@ -26,27 +30,32 @@ from wamr.wamr_api.iwasm import wasm_runtime_full_init
 from wamr.wamr_api.iwasm import wasm_runtime_instantiate
 from wamr.wamr_api.iwasm import wasm_runtime_load
 from wamr.wamr_api.iwasm import wasm_runtime_lookup_function
+from wamr.wamr_api.iwasm import wasm_runtime_module_malloc
 from wamr.wamr_api.iwasm import wasm_runtime_unload
-
+from wamr.wamr_api.iwasm import NativeSymbol
 
 class Engine:
-    def __init__(self):
-        self.init_args = self._get_init_args()
+    def __init__(self, native_symbols):
+        self.init_args = self._get_init_args(native_symbols)
         wasm_runtime_full_init(pointer(self.init_args))
 
     def __del__(self):
         print("deleting Engine")
         wasm_runtime_destroy()
 
-    def _get_init_args(self, heap_size: int = 1024 * 512) -> RuntimeInitArgs:
+    def _get_init_args(self, native_symbols, heap_size: int = 1024 * 512) -> RuntimeInitArgs:
         init_args = RuntimeInitArgs()
         init_args.mem_alloc_type = Alloc_With_Pool
         init_args.mem_alloc_option.pool.heap_buf = cast(
             (c_char * heap_size)(), c_void_p
         )
         init_args.mem_alloc_option.pool.heap_size = heap_size
-        return init_args
 
+        init_args.n_native_symbols = len(native_symbols)
+        init_args.native_module_name = String.from_param("env")
+        init_args.native_symbols = cast(native_symbols, POINTER(NativeSymbol))
+
+        return init_args
 
 class Module:
     __create_key = object()
@@ -87,7 +96,10 @@ class Instance:
         print("deleting Instance")
         wasm_runtime_deinstantiate(self.module_inst)
 
-    def lookup_function(self, name: str):
+    def malloc(self, nbytes: int, native_handler) -> c_uint:
+        return wasm_runtime_module_malloc(self.module_inst, nbytes, native_handler)
+
+    def lookup_function(self, name: str) -> wasm_function_inst_t:
         func = wasm_runtime_lookup_function(self.module_inst, name, None)
         if not func:
             raise Exception("Error while looking-up function")
