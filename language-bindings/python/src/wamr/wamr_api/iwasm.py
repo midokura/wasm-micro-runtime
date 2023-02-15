@@ -1,10 +1,7 @@
-# Copyright (C) 2019 Intel Corporation.  All rights reserved.
-# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-
-r"""Wrapper for wasm_export.h
+r"""Wrapper for wasm_hack.h
 
 Generated with:
-ctypesgen ../../../../core/iwasm/include/wasm_export.h -l ../libs/libiwasm.so -o iwasm.py
+/Users/yamamoto/git/midokura-private/node-devkit/venv/bin/ctypesgen -I ../../../../../core/iwasm/include /Users/yamamoto/evp_agent/wasm_hack.h ../../../../../core/iwasm/include/wasm_export.h -l ../libs/libiwasm.dylib -o iwasm.py
 
 Do not modify this file.
 """
@@ -863,24 +860,20 @@ del loaderclass
 add_library_search_dirs([])
 
 # Begin libraries
-_libs["../libs/libiwasm.so"] = load_library("../libs/libiwasm.so")
+_libs["../libs/libiwasm.dylib"] = load_library("../libs/libiwasm.dylib")
 
 # 1 libraries
 # End libraries
 
 # No modules
 
-__uint8_t = c_ubyte# /usr/include/x86_64-linux-gnu/bits/types.h: 38
+uint8_t = c_ubyte# /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_types/_uint8_t.h: 31
 
-__uint32_t = c_uint# /usr/include/x86_64-linux-gnu/bits/types.h: 42
+uint32_t = c_uint# /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_types/_uint32_t.h: 31
 
-uint8_t = __uint8_t# /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h: 24
+uintptr_t = c_ulong# /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/_types/_uintptr_t.h: 34
 
-uint32_t = __uint32_t# /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h: 26
-
-uintptr_t = c_ulong# /usr/include/stdint.h: 90
-
-# wasm-micro-runtime/core/iwasm/include/lib_export.h: 22
+# ../../../../../core/iwasm/include/lib_export.h: 22
 class struct_NativeSymbol(Structure):
     pass
 
@@ -897,25 +890,25 @@ struct_NativeSymbol._fields_ = [
     ('attachment', POINTER(None)),
 ]
 
-NativeSymbol = struct_NativeSymbol# wasm-micro-runtime/core/iwasm/include/lib_export.h: 22
+NativeSymbol = struct_NativeSymbol# ../../../../../core/iwasm/include/lib_export.h: 22
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 62
+# ../../../../../core/iwasm/include/wasm_export.h: 62
 class struct_WASMModuleCommon(Structure):
     pass
 
-wasm_module_t = POINTER(struct_WASMModuleCommon)# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 63
+wasm_module_t = POINTER(struct_WASMModuleCommon)# ../../../../../core/iwasm/include/wasm_export.h: 63
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 67
+# ../../../../../core/iwasm/include/wasm_export.h: 67
 class struct_WASMModuleInstanceCommon(Structure):
     pass
 
-wasm_module_inst_t = POINTER(struct_WASMModuleInstanceCommon)# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 68
+wasm_module_inst_t = POINTER(struct_WASMModuleInstanceCommon)# ../../../../../core/iwasm/include/wasm_export.h: 68
 
-WASMFunctionInstanceCommon = None# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 71
+WASMFunctionInstanceCommon = None# ../../../../../core/iwasm/include/wasm_export.h: 71
 
-wasm_function_inst_t = POINTER(WASMFunctionInstanceCommon)# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 72
+wasm_function_inst_t = POINTER(WASMFunctionInstanceCommon)# ../../../../../core/iwasm/include/wasm_export.h: 72
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 75
+# ../../../../../core/iwasm/include/wasm_export.h: 75
 class struct_wasm_section_t(Structure):
     pass
 
@@ -932,41 +925,41 @@ struct_wasm_section_t._fields_ = [
     ('section_body_size', uint32_t),
 ]
 
-wasm_section_t = struct_wasm_section_t# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 83
+wasm_section_t = struct_wasm_section_t# ../../../../../core/iwasm/include/wasm_export.h: 83
 
-aot_section_t = struct_wasm_section_t# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 83
+aot_section_t = struct_wasm_section_t# ../../../../../core/iwasm/include/wasm_export.h: 83
 
-wasm_section_list_t = POINTER(struct_wasm_section_t)# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 83
+wasm_section_list_t = POINTER(struct_wasm_section_t)# ../../../../../core/iwasm/include/wasm_export.h: 83
 
-aot_section_list_t = POINTER(struct_wasm_section_t)# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 83
+aot_section_list_t = POINTER(struct_wasm_section_t)# ../../../../../core/iwasm/include/wasm_export.h: 83
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 86
+# ../../../../../core/iwasm/include/wasm_export.h: 86
 class struct_WASMExecEnv(Structure):
     pass
 
-wasm_exec_env_t = POINTER(struct_WASMExecEnv)# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 87
+wasm_exec_env_t = POINTER(struct_WASMExecEnv)# ../../../../../core/iwasm/include/wasm_export.h: 87
 
-enum_anon_2 = c_int# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 94
+enum_anon_2 = c_int# ../../../../../core/iwasm/include/wasm_export.h: 94
 
-Wasm_Module_Bytecode = 0# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 94
+Wasm_Module_Bytecode = 0# ../../../../../core/iwasm/include/wasm_export.h: 94
 
-Wasm_Module_AoT = (Wasm_Module_Bytecode + 1)# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 94
+Wasm_Module_AoT = (Wasm_Module_Bytecode + 1)# ../../../../../core/iwasm/include/wasm_export.h: 94
 
-Package_Type_Unknown = 0xFFFF# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 94
+Package_Type_Unknown = 0xFFFF# ../../../../../core/iwasm/include/wasm_export.h: 94
 
-package_type_t = enum_anon_2# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 94
+package_type_t = enum_anon_2# ../../../../../core/iwasm/include/wasm_export.h: 94
 
-enum_anon_3 = c_int# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 108
+enum_anon_3 = c_int# ../../../../../core/iwasm/include/wasm_export.h: 108
 
-Alloc_With_Pool = 0# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 108
+Alloc_With_Pool = 0# ../../../../../core/iwasm/include/wasm_export.h: 108
 
-Alloc_With_Allocator = (Alloc_With_Pool + 1)# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 108
+Alloc_With_Allocator = (Alloc_With_Pool + 1)# ../../../../../core/iwasm/include/wasm_export.h: 108
 
-Alloc_With_System_Allocator = (Alloc_With_Allocator + 1)# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 108
+Alloc_With_System_Allocator = (Alloc_With_Allocator + 1)# ../../../../../core/iwasm/include/wasm_export.h: 108
 
-mem_alloc_type_t = enum_anon_3# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 108
+mem_alloc_type_t = enum_anon_3# ../../../../../core/iwasm/include/wasm_export.h: 108
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 112
+# ../../../../../core/iwasm/include/wasm_export.h: 112
 class struct_anon_4(Structure):
     pass
 
@@ -979,7 +972,7 @@ struct_anon_4._fields_ = [
     ('heap_size', uint32_t),
 ]
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 116
+# ../../../../../core/iwasm/include/wasm_export.h: 116
 class struct_anon_5(Structure):
     pass
 
@@ -996,7 +989,7 @@ struct_anon_5._fields_ = [
     ('user_data', POINTER(None)),
 ]
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 124
+# ../../../../../core/iwasm/include/wasm_export.h: 124
 class union_MemAllocOption(Union):
     pass
 
@@ -1009,9 +1002,9 @@ union_MemAllocOption._fields_ = [
     ('allocator', struct_anon_5),
 ]
 
-MemAllocOption = union_MemAllocOption# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 124
+MemAllocOption = union_MemAllocOption# ../../../../../core/iwasm/include/wasm_export.h: 124
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 132
+# ../../../../../core/iwasm/include/wasm_export.h: 132
 class struct_mem_alloc_info_t(Structure):
     pass
 
@@ -1026,21 +1019,21 @@ struct_mem_alloc_info_t._fields_ = [
     ('highmark_size', uint32_t),
 ]
 
-mem_alloc_info_t = struct_mem_alloc_info_t# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 132
+mem_alloc_info_t = struct_mem_alloc_info_t# ../../../../../core/iwasm/include/wasm_export.h: 132
 
-enum_RunningMode = c_int# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 140
+enum_RunningMode = c_int# ../../../../../core/iwasm/include/wasm_export.h: 140
 
-Mode_Interp = 1# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 140
+Mode_Interp = 1# ../../../../../core/iwasm/include/wasm_export.h: 140
 
-Mode_Fast_JIT = (Mode_Interp + 1)# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 140
+Mode_Fast_JIT = (Mode_Interp + 1)# ../../../../../core/iwasm/include/wasm_export.h: 140
 
-Mode_LLVM_JIT = (Mode_Fast_JIT + 1)# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 140
+Mode_LLVM_JIT = (Mode_Fast_JIT + 1)# ../../../../../core/iwasm/include/wasm_export.h: 140
 
-Mode_Multi_Tier_JIT = (Mode_LLVM_JIT + 1)# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 140
+Mode_Multi_Tier_JIT = (Mode_LLVM_JIT + 1)# ../../../../../core/iwasm/include/wasm_export.h: 140
 
-RunningMode = enum_RunningMode# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 140
+RunningMode = enum_RunningMode# ../../../../../core/iwasm/include/wasm_export.h: 140
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 170
+# ../../../../../core/iwasm/include/wasm_export.h: 170
 class struct_RuntimeInitArgs(Structure):
     pass
 
@@ -1075,25 +1068,25 @@ struct_RuntimeInitArgs._fields_ = [
     ('llvm_jit_size_level', uint32_t),
 ]
 
-RuntimeInitArgs = struct_RuntimeInitArgs# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 170
+RuntimeInitArgs = struct_RuntimeInitArgs# ../../../../../core/iwasm/include/wasm_export.h: 170
 
-wasm_valkind_t = uint8_t# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 174
+wasm_valkind_t = uint8_t# ../../../../../core/iwasm/include/wasm_export.h: 174
 
-enum_wasm_valkind_enum = c_int# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 175
+enum_wasm_valkind_enum = c_int# ../../../../../core/iwasm/include/wasm_export.h: 175
 
-WASM_I32 = 0# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 175
+WASM_I32 = 0# ../../../../../core/iwasm/include/wasm_export.h: 175
 
-WASM_I64 = (WASM_I32 + 1)# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 175
+WASM_I64 = (WASM_I32 + 1)# ../../../../../core/iwasm/include/wasm_export.h: 175
 
-WASM_F32 = (WASM_I64 + 1)# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 175
+WASM_F32 = (WASM_I64 + 1)# ../../../../../core/iwasm/include/wasm_export.h: 175
 
-WASM_F64 = (WASM_F32 + 1)# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 175
+WASM_F64 = (WASM_F32 + 1)# ../../../../../core/iwasm/include/wasm_export.h: 175
 
-WASM_ANYREF = 128# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 175
+WASM_ANYREF = 128# ../../../../../core/iwasm/include/wasm_export.h: 175
 
-WASM_FUNCREF = (WASM_ANYREF + 1)# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 175
+WASM_FUNCREF = (WASM_ANYREF + 1)# ../../../../../core/iwasm/include/wasm_export.h: 175
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 190
+# ../../../../../core/iwasm/include/wasm_export.h: 190
 class union_anon_6(Union):
     pass
 
@@ -1112,7 +1105,7 @@ union_anon_6._fields_ = [
     ('foreign', uintptr_t),
 ]
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 199
+# ../../../../../core/iwasm/include/wasm_export.h: 199
 class struct_wasm_val_t(Structure):
     pass
 
@@ -1125,87 +1118,81 @@ struct_wasm_val_t._fields_ = [
     ('of', union_anon_6),
 ]
 
-wasm_val_t = struct_wasm_val_t# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 199
+wasm_val_t = struct_wasm_val_t# ../../../../../core/iwasm/include/wasm_export.h: 199
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 210
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_init", "cdecl"):
-    wasm_runtime_init = _libs["../libs/libiwasm.so"].get("wasm_runtime_init", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 210
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_init", "cdecl"):
+    wasm_runtime_init = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_init", "cdecl")
     wasm_runtime_init.argtypes = []
     wasm_runtime_init.restype = c_bool
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 222
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_full_init", "cdecl"):
-    wasm_runtime_full_init = _libs["../libs/libiwasm.so"].get("wasm_runtime_full_init", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 222
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_full_init", "cdecl"):
+    wasm_runtime_full_init = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_full_init", "cdecl")
     wasm_runtime_full_init.argtypes = [POINTER(RuntimeInitArgs)]
     wasm_runtime_full_init.restype = c_bool
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 232
-for _lib in _libs.values():
-    if not _lib.has("wasm_runtime_is_running_mode_supported", "cdecl"):
-        continue
-    wasm_runtime_is_running_mode_supported = _lib.get("wasm_runtime_is_running_mode_supported", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 232
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_is_running_mode_supported", "cdecl"):
+    wasm_runtime_is_running_mode_supported = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_is_running_mode_supported", "cdecl")
     wasm_runtime_is_running_mode_supported.argtypes = [RunningMode]
     wasm_runtime_is_running_mode_supported.restype = c_bool
-    break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 244
-for _lib in _libs.values():
-    if not _lib.has("wasm_runtime_set_default_running_mode", "cdecl"):
-        continue
-    wasm_runtime_set_default_running_mode = _lib.get("wasm_runtime_set_default_running_mode", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 244
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_set_default_running_mode", "cdecl"):
+    wasm_runtime_set_default_running_mode = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_set_default_running_mode", "cdecl")
     wasm_runtime_set_default_running_mode.argtypes = [RunningMode]
     wasm_runtime_set_default_running_mode.restype = c_bool
-    break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 250
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_destroy", "cdecl"):
-    wasm_runtime_destroy = _libs["../libs/libiwasm.so"].get("wasm_runtime_destroy", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 250
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_destroy", "cdecl"):
+    wasm_runtime_destroy = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_destroy", "cdecl")
     wasm_runtime_destroy.argtypes = []
     wasm_runtime_destroy.restype = None
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 259
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_malloc", "cdecl"):
-    wasm_runtime_malloc = _libs["../libs/libiwasm.so"].get("wasm_runtime_malloc", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 259
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_malloc", "cdecl"):
+    wasm_runtime_malloc = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_malloc", "cdecl")
     wasm_runtime_malloc.argtypes = [c_uint]
     wasm_runtime_malloc.restype = POINTER(c_ubyte)
     wasm_runtime_malloc.errcheck = lambda v,*a : cast(v, c_void_p)
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 270
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_realloc", "cdecl"):
-    wasm_runtime_realloc = _libs["../libs/libiwasm.so"].get("wasm_runtime_realloc", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 270
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_realloc", "cdecl"):
+    wasm_runtime_realloc = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_realloc", "cdecl")
     wasm_runtime_realloc.argtypes = [POINTER(None), c_uint]
     wasm_runtime_realloc.restype = POINTER(c_ubyte)
     wasm_runtime_realloc.errcheck = lambda v,*a : cast(v, c_void_p)
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 277
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_free", "cdecl"):
-    wasm_runtime_free = _libs["../libs/libiwasm.so"].get("wasm_runtime_free", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 277
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_free", "cdecl"):
+    wasm_runtime_free = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_free", "cdecl")
     wasm_runtime_free.argtypes = [POINTER(None)]
     wasm_runtime_free.restype = None
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 283
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_get_mem_alloc_info", "cdecl"):
-    wasm_runtime_get_mem_alloc_info = _libs["../libs/libiwasm.so"].get("wasm_runtime_get_mem_alloc_info", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 283
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_get_mem_alloc_info", "cdecl"):
+    wasm_runtime_get_mem_alloc_info = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_get_mem_alloc_info", "cdecl")
     wasm_runtime_get_mem_alloc_info.argtypes = [POINTER(mem_alloc_info_t)]
     wasm_runtime_get_mem_alloc_info.restype = c_bool
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 294
-if _libs["../libs/libiwasm.so"].has("get_package_type", "cdecl"):
-    get_package_type = _libs["../libs/libiwasm.so"].get("get_package_type", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 294
+if _libs["../libs/libiwasm.dylib"].has("get_package_type", "cdecl"):
+    get_package_type = _libs["../libs/libiwasm.dylib"].get("get_package_type", "cdecl")
     get_package_type.argtypes = [POINTER(uint8_t), uint32_t]
     get_package_type.restype = package_type_t
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 305
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_is_xip_file", "cdecl"):
-    wasm_runtime_is_xip_file = _libs["../libs/libiwasm.so"].get("wasm_runtime_is_xip_file", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 305
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_is_xip_file", "cdecl"):
+    wasm_runtime_is_xip_file = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_is_xip_file", "cdecl")
     wasm_runtime_is_xip_file.argtypes = [POINTER(uint8_t), uint32_t]
     wasm_runtime_is_xip_file.restype = c_bool
 
-module_reader = CFUNCTYPE(UNCHECKED(c_bool), String, POINTER(POINTER(uint8_t)), POINTER(uint32_t))# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 310
+module_reader = CFUNCTYPE(UNCHECKED(c_bool), String, POINTER(POINTER(uint8_t)), POINTER(uint32_t))# ../../../../../core/iwasm/include/wasm_export.h: 310
 
-module_destroyer = CFUNCTYPE(UNCHECKED(None), POINTER(uint8_t), uint32_t)# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 316
+module_destroyer = CFUNCTYPE(UNCHECKED(None), POINTER(uint8_t), uint32_t)# ../../../../../core/iwasm/include/wasm_export.h: 316
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 325
+# ../../../../../core/iwasm/include/wasm_export.h: 325
 for _lib in _libs.values():
     if not _lib.has("wasm_runtime_set_module_reader", "cdecl"):
         continue
@@ -1214,7 +1201,7 @@ for _lib in _libs.values():
     wasm_runtime_set_module_reader.restype = None
     break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 339
+# ../../../../../core/iwasm/include/wasm_export.h: 339
 for _lib in _libs.values():
     if not _lib.has("wasm_runtime_register_module", "cdecl"):
         continue
@@ -1223,7 +1210,7 @@ for _lib in _libs.values():
     wasm_runtime_register_module.restype = c_bool
     break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 351
+# ../../../../../core/iwasm/include/wasm_export.h: 351
 for _lib in _libs.values():
     if not _lib.has("wasm_runtime_find_module_registered", "cdecl"):
         continue
@@ -1232,25 +1219,25 @@ for _lib in _libs.values():
     wasm_runtime_find_module_registered.restype = wasm_module_t
     break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 375
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_load", "cdecl"):
-    wasm_runtime_load = _libs["../libs/libiwasm.so"].get("wasm_runtime_load", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 375
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_load", "cdecl"):
+    wasm_runtime_load = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_load", "cdecl")
     wasm_runtime_load.argtypes = [POINTER(uint8_t), uint32_t, String, uint32_t]
     wasm_runtime_load.restype = wasm_module_t
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 389
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_load_from_sections", "cdecl"):
-    wasm_runtime_load_from_sections = _libs["../libs/libiwasm.so"].get("wasm_runtime_load_from_sections", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 389
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_load_from_sections", "cdecl"):
+    wasm_runtime_load_from_sections = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_load_from_sections", "cdecl")
     wasm_runtime_load_from_sections.argtypes = [wasm_section_list_t, c_bool, String, uint32_t]
     wasm_runtime_load_from_sections.restype = wasm_module_t
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 398
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_unload", "cdecl"):
-    wasm_runtime_unload = _libs["../libs/libiwasm.so"].get("wasm_runtime_unload", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 398
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_unload", "cdecl"):
+    wasm_runtime_unload = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_unload", "cdecl")
     wasm_runtime_unload.argtypes = [wasm_module_t]
     wasm_runtime_unload.restype = None
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 408
+# ../../../../../core/iwasm/include/wasm_export.h: 408
 for _lib in _libs.values():
     if not _lib.has("wasm_runtime_get_module_hash", "cdecl"):
         continue
@@ -1263,133 +1250,127 @@ for _lib in _libs.values():
         wasm_runtime_get_module_hash.errcheck = ReturnString
     break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 438
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_set_wasi_args_ex", "cdecl"):
-    wasm_runtime_set_wasi_args_ex = _libs["../libs/libiwasm.so"].get("wasm_runtime_set_wasi_args_ex", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 438
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_set_wasi_args_ex", "cdecl"):
+    wasm_runtime_set_wasi_args_ex = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_set_wasi_args_ex", "cdecl")
     wasm_runtime_set_wasi_args_ex.argtypes = [wasm_module_t, POINTER(POINTER(c_char)), uint32_t, POINTER(POINTER(c_char)), uint32_t, POINTER(POINTER(c_char)), uint32_t, POINTER(POINTER(c_char)), c_int, c_int, c_int, c_int]
     wasm_runtime_set_wasi_args_ex.restype = None
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 452
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_set_wasi_args", "cdecl"):
-    wasm_runtime_set_wasi_args = _libs["../libs/libiwasm.so"].get("wasm_runtime_set_wasi_args", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 452
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_set_wasi_args", "cdecl"):
+    wasm_runtime_set_wasi_args = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_set_wasi_args", "cdecl")
     wasm_runtime_set_wasi_args.argtypes = [wasm_module_t, POINTER(POINTER(c_char)), uint32_t, POINTER(POINTER(c_char)), uint32_t, POINTER(POINTER(c_char)), uint32_t, POINTER(POINTER(c_char)), c_int]
     wasm_runtime_set_wasi_args.restype = None
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 459
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_set_wasi_addr_pool", "cdecl"):
-    wasm_runtime_set_wasi_addr_pool = _libs["../libs/libiwasm.so"].get("wasm_runtime_set_wasi_addr_pool", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 459
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_set_wasi_addr_pool", "cdecl"):
+    wasm_runtime_set_wasi_addr_pool = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_set_wasi_addr_pool", "cdecl")
     wasm_runtime_set_wasi_addr_pool.argtypes = [wasm_module_t, POINTER(POINTER(c_char)), uint32_t]
     wasm_runtime_set_wasi_addr_pool.restype = None
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 463
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_set_wasi_ns_lookup_pool", "cdecl"):
-    wasm_runtime_set_wasi_ns_lookup_pool = _libs["../libs/libiwasm.so"].get("wasm_runtime_set_wasi_ns_lookup_pool", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 463
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_set_wasi_ns_lookup_pool", "cdecl"):
+    wasm_runtime_set_wasi_ns_lookup_pool = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_set_wasi_ns_lookup_pool", "cdecl")
     wasm_runtime_set_wasi_ns_lookup_pool.argtypes = [wasm_module_t, POINTER(POINTER(c_char)), uint32_t]
     wasm_runtime_set_wasi_ns_lookup_pool.restype = None
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 486
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_instantiate", "cdecl"):
-    wasm_runtime_instantiate = _libs["../libs/libiwasm.so"].get("wasm_runtime_instantiate", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 486
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_instantiate", "cdecl"):
+    wasm_runtime_instantiate = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_instantiate", "cdecl")
     wasm_runtime_instantiate.argtypes = [wasm_module_t, uint32_t, uint32_t, String, uint32_t]
     wasm_runtime_instantiate.restype = wasm_module_inst_t
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 502
-for _lib in _libs.values():
-    if not _lib.has("wasm_runtime_set_running_mode", "cdecl"):
-        continue
-    wasm_runtime_set_running_mode = _lib.get("wasm_runtime_set_running_mode", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 502
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_set_running_mode", "cdecl"):
+    wasm_runtime_set_running_mode = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_set_running_mode", "cdecl")
     wasm_runtime_set_running_mode.argtypes = [wasm_module_inst_t, RunningMode]
     wasm_runtime_set_running_mode.restype = c_bool
-    break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 516
-for _lib in _libs.values():
-    if not _lib.has("wasm_runtime_get_running_mode", "cdecl"):
-        continue
-    wasm_runtime_get_running_mode = _lib.get("wasm_runtime_get_running_mode", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 516
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_get_running_mode", "cdecl"):
+    wasm_runtime_get_running_mode = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_get_running_mode", "cdecl")
     wasm_runtime_get_running_mode.argtypes = [wasm_module_inst_t]
     wasm_runtime_get_running_mode.restype = RunningMode
-    break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 524
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_deinstantiate", "cdecl"):
-    wasm_runtime_deinstantiate = _libs["../libs/libiwasm.so"].get("wasm_runtime_deinstantiate", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 524
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_deinstantiate", "cdecl"):
+    wasm_runtime_deinstantiate = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_deinstantiate", "cdecl")
     wasm_runtime_deinstantiate.argtypes = [wasm_module_inst_t]
     wasm_runtime_deinstantiate.restype = None
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 534
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_get_module", "cdecl"):
-    wasm_runtime_get_module = _libs["../libs/libiwasm.so"].get("wasm_runtime_get_module", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 534
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_get_module", "cdecl"):
+    wasm_runtime_get_module = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_get_module", "cdecl")
     wasm_runtime_get_module.argtypes = [wasm_module_inst_t]
     wasm_runtime_get_module.restype = wasm_module_t
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 537
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_is_wasi_mode", "cdecl"):
-    wasm_runtime_is_wasi_mode = _libs["../libs/libiwasm.so"].get("wasm_runtime_is_wasi_mode", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 537
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_is_wasi_mode", "cdecl"):
+    wasm_runtime_is_wasi_mode = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_is_wasi_mode", "cdecl")
     wasm_runtime_is_wasi_mode.argtypes = [wasm_module_inst_t]
     wasm_runtime_is_wasi_mode.restype = c_bool
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 540
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_lookup_wasi_start_function", "cdecl"):
-    wasm_runtime_lookup_wasi_start_function = _libs["../libs/libiwasm.so"].get("wasm_runtime_lookup_wasi_start_function", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 540
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_lookup_wasi_start_function", "cdecl"):
+    wasm_runtime_lookup_wasi_start_function = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_lookup_wasi_start_function", "cdecl")
     wasm_runtime_lookup_wasi_start_function.argtypes = [wasm_module_inst_t]
     wasm_runtime_lookup_wasi_start_function.restype = wasm_function_inst_t
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 552
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_get_wasi_exit_code", "cdecl"):
-    wasm_runtime_get_wasi_exit_code = _libs["../libs/libiwasm.so"].get("wasm_runtime_get_wasi_exit_code", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 552
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_get_wasi_exit_code", "cdecl"):
+    wasm_runtime_get_wasi_exit_code = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_get_wasi_exit_code", "cdecl")
     wasm_runtime_get_wasi_exit_code.argtypes = [wasm_module_inst_t]
     wasm_runtime_get_wasi_exit_code.restype = uint32_t
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 564
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_lookup_function", "cdecl"):
-    wasm_runtime_lookup_function = _libs["../libs/libiwasm.so"].get("wasm_runtime_lookup_function", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 564
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_lookup_function", "cdecl"):
+    wasm_runtime_lookup_function = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_lookup_function", "cdecl")
     wasm_runtime_lookup_function.argtypes = [wasm_module_inst_t, String, String]
     wasm_runtime_lookup_function.restype = wasm_function_inst_t
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 576
-if _libs["../libs/libiwasm.so"].has("wasm_func_get_param_count", "cdecl"):
-    wasm_func_get_param_count = _libs["../libs/libiwasm.so"].get("wasm_func_get_param_count", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 576
+if _libs["../libs/libiwasm.dylib"].has("wasm_func_get_param_count", "cdecl"):
+    wasm_func_get_param_count = _libs["../libs/libiwasm.dylib"].get("wasm_func_get_param_count", "cdecl")
     wasm_func_get_param_count.argtypes = [wasm_function_inst_t, wasm_module_inst_t]
     wasm_func_get_param_count.restype = uint32_t
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 588
-if _libs["../libs/libiwasm.so"].has("wasm_func_get_result_count", "cdecl"):
-    wasm_func_get_result_count = _libs["../libs/libiwasm.so"].get("wasm_func_get_result_count", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 588
+if _libs["../libs/libiwasm.dylib"].has("wasm_func_get_result_count", "cdecl"):
+    wasm_func_get_result_count = _libs["../libs/libiwasm.dylib"].get("wasm_func_get_result_count", "cdecl")
     wasm_func_get_result_count.argtypes = [wasm_function_inst_t, wasm_module_inst_t]
     wasm_func_get_result_count.restype = uint32_t
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 599
-if _libs["../libs/libiwasm.so"].has("wasm_func_get_param_types", "cdecl"):
-    wasm_func_get_param_types = _libs["../libs/libiwasm.so"].get("wasm_func_get_param_types", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 599
+if _libs["../libs/libiwasm.dylib"].has("wasm_func_get_param_types", "cdecl"):
+    wasm_func_get_param_types = _libs["../libs/libiwasm.dylib"].get("wasm_func_get_param_types", "cdecl")
     wasm_func_get_param_types.argtypes = [wasm_function_inst_t, wasm_module_inst_t, POINTER(wasm_valkind_t)]
     wasm_func_get_param_types.restype = None
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 611
-if _libs["../libs/libiwasm.so"].has("wasm_func_get_result_types", "cdecl"):
-    wasm_func_get_result_types = _libs["../libs/libiwasm.so"].get("wasm_func_get_result_types", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 611
+if _libs["../libs/libiwasm.dylib"].has("wasm_func_get_result_types", "cdecl"):
+    wasm_func_get_result_types = _libs["../libs/libiwasm.dylib"].get("wasm_func_get_result_types", "cdecl")
     wasm_func_get_result_types.argtypes = [wasm_function_inst_t, wasm_module_inst_t, POINTER(wasm_valkind_t)]
     wasm_func_get_result_types.restype = None
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 625
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_create_exec_env", "cdecl"):
-    wasm_runtime_create_exec_env = _libs["../libs/libiwasm.so"].get("wasm_runtime_create_exec_env", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 625
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_create_exec_env", "cdecl"):
+    wasm_runtime_create_exec_env = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_create_exec_env", "cdecl")
     wasm_runtime_create_exec_env.argtypes = [wasm_module_inst_t, uint32_t]
     wasm_runtime_create_exec_env.restype = wasm_exec_env_t
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 634
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_destroy_exec_env", "cdecl"):
-    wasm_runtime_destroy_exec_env = _libs["../libs/libiwasm.so"].get("wasm_runtime_destroy_exec_env", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 634
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_destroy_exec_env", "cdecl"):
+    wasm_runtime_destroy_exec_env = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_destroy_exec_env", "cdecl")
     wasm_runtime_destroy_exec_env.argtypes = [wasm_exec_env_t]
     wasm_runtime_destroy_exec_env.restype = None
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 651
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_get_exec_env_singleton", "cdecl"):
-    wasm_runtime_get_exec_env_singleton = _libs["../libs/libiwasm.so"].get("wasm_runtime_get_exec_env_singleton", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 651
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_get_exec_env_singleton", "cdecl"):
+    wasm_runtime_get_exec_env_singleton = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_get_exec_env_singleton", "cdecl")
     wasm_runtime_get_exec_env_singleton.argtypes = [wasm_module_inst_t]
     wasm_runtime_get_exec_env_singleton.restype = wasm_exec_env_t
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 674
+# ../../../../../core/iwasm/include/wasm_export.h: 674
 for _lib in _libs.values():
     if not _lib.has("wasm_runtime_start_debug_instance_with_port", "cdecl"):
         continue
@@ -1398,7 +1379,7 @@ for _lib in _libs.values():
     wasm_runtime_start_debug_instance_with_port.restype = uint32_t
     break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 680
+# ../../../../../core/iwasm/include/wasm_export.h: 680
 for _lib in _libs.values():
     if not _lib.has("wasm_runtime_start_debug_instance", "cdecl"):
         continue
@@ -1407,199 +1388,199 @@ for _lib in _libs.values():
     wasm_runtime_start_debug_instance.restype = uint32_t
     break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 695
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_init_thread_env", "cdecl"):
-    wasm_runtime_init_thread_env = _libs["../libs/libiwasm.so"].get("wasm_runtime_init_thread_env", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 695
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_init_thread_env", "cdecl"):
+    wasm_runtime_init_thread_env = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_init_thread_env", "cdecl")
     wasm_runtime_init_thread_env.argtypes = []
     wasm_runtime_init_thread_env.restype = c_bool
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 701
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_destroy_thread_env", "cdecl"):
-    wasm_runtime_destroy_thread_env = _libs["../libs/libiwasm.so"].get("wasm_runtime_destroy_thread_env", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 701
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_destroy_thread_env", "cdecl"):
+    wasm_runtime_destroy_thread_env = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_destroy_thread_env", "cdecl")
     wasm_runtime_destroy_thread_env.argtypes = []
     wasm_runtime_destroy_thread_env.restype = None
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 707
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_thread_env_inited", "cdecl"):
-    wasm_runtime_thread_env_inited = _libs["../libs/libiwasm.so"].get("wasm_runtime_thread_env_inited", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 707
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_thread_env_inited", "cdecl"):
+    wasm_runtime_thread_env_inited = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_thread_env_inited", "cdecl")
     wasm_runtime_thread_env_inited.argtypes = []
     wasm_runtime_thread_env_inited.restype = c_bool
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 717
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_get_module_inst", "cdecl"):
-    wasm_runtime_get_module_inst = _libs["../libs/libiwasm.so"].get("wasm_runtime_get_module_inst", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 717
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_get_module_inst", "cdecl"):
+    wasm_runtime_get_module_inst = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_get_module_inst", "cdecl")
     wasm_runtime_get_module_inst.argtypes = [wasm_exec_env_t]
     wasm_runtime_get_module_inst.restype = wasm_module_inst_t
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 731
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_set_module_inst", "cdecl"):
-    wasm_runtime_set_module_inst = _libs["../libs/libiwasm.so"].get("wasm_runtime_set_module_inst", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 731
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_set_module_inst", "cdecl"):
+    wasm_runtime_set_module_inst = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_set_module_inst", "cdecl")
     wasm_runtime_set_module_inst.argtypes = [wasm_exec_env_t, wasm_module_inst_t]
     wasm_runtime_set_module_inst.restype = None
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 755
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_call_wasm", "cdecl"):
-    wasm_runtime_call_wasm = _libs["../libs/libiwasm.so"].get("wasm_runtime_call_wasm", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 755
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_call_wasm", "cdecl"):
+    wasm_runtime_call_wasm = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_call_wasm", "cdecl")
     wasm_runtime_call_wasm.argtypes = [wasm_exec_env_t, wasm_function_inst_t, uint32_t, POINTER(uint32_t)]
     wasm_runtime_call_wasm.restype = c_bool
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 776
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_call_wasm_a", "cdecl"):
-    wasm_runtime_call_wasm_a = _libs["../libs/libiwasm.so"].get("wasm_runtime_call_wasm_a", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 776
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_call_wasm_a", "cdecl"):
+    wasm_runtime_call_wasm_a = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_call_wasm_a", "cdecl")
     wasm_runtime_call_wasm_a.argtypes = [wasm_exec_env_t, wasm_function_inst_t, uint32_t, POINTER(wasm_val_t), uint32_t, POINTER(wasm_val_t)]
     wasm_runtime_call_wasm_a.restype = c_bool
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 798
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_call_wasm_v", "cdecl"):
-    _func = _libs["../libs/libiwasm.so"].get("wasm_runtime_call_wasm_v", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 798
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_call_wasm_v", "cdecl"):
+    _func = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_call_wasm_v", "cdecl")
     _restype = c_bool
     _errcheck = None
     _argtypes = [wasm_exec_env_t, wasm_function_inst_t, uint32_t, POINTER(wasm_val_t), uint32_t]
     wasm_runtime_call_wasm_v = _variadic_function(_func,_restype,_argtypes,_errcheck)
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 818
-if _libs["../libs/libiwasm.so"].has("wasm_application_execute_main", "cdecl"):
-    wasm_application_execute_main = _libs["../libs/libiwasm.so"].get("wasm_application_execute_main", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 818
+if _libs["../libs/libiwasm.dylib"].has("wasm_application_execute_main", "cdecl"):
+    wasm_application_execute_main = _libs["../libs/libiwasm.dylib"].get("wasm_application_execute_main", "cdecl")
     wasm_application_execute_main.argtypes = [wasm_module_inst_t, c_int32, POINTER(POINTER(c_char))]
     wasm_application_execute_main.restype = c_bool
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 837
-if _libs["../libs/libiwasm.so"].has("wasm_application_execute_func", "cdecl"):
-    wasm_application_execute_func = _libs["../libs/libiwasm.so"].get("wasm_application_execute_func", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 837
+if _libs["../libs/libiwasm.dylib"].has("wasm_application_execute_func", "cdecl"):
+    wasm_application_execute_func = _libs["../libs/libiwasm.dylib"].get("wasm_application_execute_func", "cdecl")
     wasm_application_execute_func.argtypes = [wasm_module_inst_t, String, c_int32, POINTER(POINTER(c_char))]
     wasm_application_execute_func.restype = c_bool
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 846
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_get_exception", "cdecl"):
-    wasm_runtime_get_exception = _libs["../libs/libiwasm.so"].get("wasm_runtime_get_exception", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 846
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_get_exception", "cdecl"):
+    wasm_runtime_get_exception = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_get_exception", "cdecl")
     wasm_runtime_get_exception.argtypes = [wasm_module_inst_t]
     wasm_runtime_get_exception.restype = c_char_p
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 857
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_set_exception", "cdecl"):
-    wasm_runtime_set_exception = _libs["../libs/libiwasm.so"].get("wasm_runtime_set_exception", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 857
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_set_exception", "cdecl"):
+    wasm_runtime_set_exception = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_set_exception", "cdecl")
     wasm_runtime_set_exception.argtypes = [wasm_module_inst_t, String]
     wasm_runtime_set_exception.restype = None
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 866
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_clear_exception", "cdecl"):
-    wasm_runtime_clear_exception = _libs["../libs/libiwasm.so"].get("wasm_runtime_clear_exception", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 866
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_clear_exception", "cdecl"):
+    wasm_runtime_clear_exception = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_clear_exception", "cdecl")
     wasm_runtime_clear_exception.argtypes = [wasm_module_inst_t]
     wasm_runtime_clear_exception.restype = None
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 878
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_set_custom_data", "cdecl"):
-    wasm_runtime_set_custom_data = _libs["../libs/libiwasm.so"].get("wasm_runtime_set_custom_data", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 878
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_set_custom_data", "cdecl"):
+    wasm_runtime_set_custom_data = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_set_custom_data", "cdecl")
     wasm_runtime_set_custom_data.argtypes = [wasm_module_inst_t, POINTER(None)]
     wasm_runtime_set_custom_data.restype = None
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 887
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_get_custom_data", "cdecl"):
-    wasm_runtime_get_custom_data = _libs["../libs/libiwasm.so"].get("wasm_runtime_get_custom_data", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 887
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_get_custom_data", "cdecl"):
+    wasm_runtime_get_custom_data = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_get_custom_data", "cdecl")
     wasm_runtime_get_custom_data.argtypes = [wasm_module_inst_t]
     wasm_runtime_get_custom_data.restype = POINTER(c_ubyte)
     wasm_runtime_get_custom_data.errcheck = lambda v,*a : cast(v, c_void_p)
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 910
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_module_malloc", "cdecl"):
-    wasm_runtime_module_malloc = _libs["../libs/libiwasm.so"].get("wasm_runtime_module_malloc", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 910
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_module_malloc", "cdecl"):
+    wasm_runtime_module_malloc = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_module_malloc", "cdecl")
     wasm_runtime_module_malloc.argtypes = [wasm_module_inst_t, uint32_t, POINTER(POINTER(None))]
     wasm_runtime_module_malloc.restype = uint32_t
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 920
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_module_free", "cdecl"):
-    wasm_runtime_module_free = _libs["../libs/libiwasm.so"].get("wasm_runtime_module_free", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 920
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_module_free", "cdecl"):
+    wasm_runtime_module_free = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_module_free", "cdecl")
     wasm_runtime_module_free.argtypes = [wasm_module_inst_t, uint32_t]
     wasm_runtime_module_free.restype = None
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 936
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_module_dup_data", "cdecl"):
-    wasm_runtime_module_dup_data = _libs["../libs/libiwasm.so"].get("wasm_runtime_module_dup_data", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 936
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_module_dup_data", "cdecl"):
+    wasm_runtime_module_dup_data = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_module_dup_data", "cdecl")
     wasm_runtime_module_dup_data.argtypes = [wasm_module_inst_t, String, uint32_t]
     wasm_runtime_module_dup_data.restype = uint32_t
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 951
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_validate_app_addr", "cdecl"):
-    wasm_runtime_validate_app_addr = _libs["../libs/libiwasm.so"].get("wasm_runtime_validate_app_addr", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 951
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_validate_app_addr", "cdecl"):
+    wasm_runtime_validate_app_addr = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_validate_app_addr", "cdecl")
     wasm_runtime_validate_app_addr.argtypes = [wasm_module_inst_t, uint32_t, uint32_t]
     wasm_runtime_validate_app_addr.restype = c_bool
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 973
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_validate_app_str_addr", "cdecl"):
-    wasm_runtime_validate_app_str_addr = _libs["../libs/libiwasm.so"].get("wasm_runtime_validate_app_str_addr", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 973
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_validate_app_str_addr", "cdecl"):
+    wasm_runtime_validate_app_str_addr = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_validate_app_str_addr", "cdecl")
     wasm_runtime_validate_app_str_addr.argtypes = [wasm_module_inst_t, uint32_t]
     wasm_runtime_validate_app_str_addr.restype = c_bool
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 989
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_validate_native_addr", "cdecl"):
-    wasm_runtime_validate_native_addr = _libs["../libs/libiwasm.so"].get("wasm_runtime_validate_native_addr", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 989
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_validate_native_addr", "cdecl"):
+    wasm_runtime_validate_native_addr = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_validate_native_addr", "cdecl")
     wasm_runtime_validate_native_addr.argtypes = [wasm_module_inst_t, POINTER(None), uint32_t]
     wasm_runtime_validate_native_addr.restype = c_bool
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1004
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_addr_app_to_native", "cdecl"):
-    wasm_runtime_addr_app_to_native = _libs["../libs/libiwasm.so"].get("wasm_runtime_addr_app_to_native", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 1004
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_addr_app_to_native", "cdecl"):
+    wasm_runtime_addr_app_to_native = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_addr_app_to_native", "cdecl")
     wasm_runtime_addr_app_to_native.argtypes = [wasm_module_inst_t, uint32_t]
     wasm_runtime_addr_app_to_native.restype = POINTER(c_ubyte)
     wasm_runtime_addr_app_to_native.errcheck = lambda v,*a : cast(v, c_void_p)
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1017
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_addr_native_to_app", "cdecl"):
-    wasm_runtime_addr_native_to_app = _libs["../libs/libiwasm.so"].get("wasm_runtime_addr_native_to_app", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 1017
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_addr_native_to_app", "cdecl"):
+    wasm_runtime_addr_native_to_app = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_addr_native_to_app", "cdecl")
     wasm_runtime_addr_native_to_app.argtypes = [wasm_module_inst_t, POINTER(None)]
     wasm_runtime_addr_native_to_app.restype = uint32_t
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1031
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_get_app_addr_range", "cdecl"):
-    wasm_runtime_get_app_addr_range = _libs["../libs/libiwasm.so"].get("wasm_runtime_get_app_addr_range", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 1031
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_get_app_addr_range", "cdecl"):
+    wasm_runtime_get_app_addr_range = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_get_app_addr_range", "cdecl")
     wasm_runtime_get_app_addr_range.argtypes = [wasm_module_inst_t, uint32_t, POINTER(uint32_t), POINTER(uint32_t)]
     wasm_runtime_get_app_addr_range.restype = c_bool
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1050
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_get_native_addr_range", "cdecl"):
-    wasm_runtime_get_native_addr_range = _libs["../libs/libiwasm.so"].get("wasm_runtime_get_native_addr_range", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 1050
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_get_native_addr_range", "cdecl"):
+    wasm_runtime_get_native_addr_range = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_get_native_addr_range", "cdecl")
     wasm_runtime_get_native_addr_range.argtypes = [wasm_module_inst_t, POINTER(uint8_t), POINTER(POINTER(uint8_t)), POINTER(POINTER(uint8_t))]
     wasm_runtime_get_native_addr_range.restype = c_bool
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1089
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_register_natives", "cdecl"):
-    wasm_runtime_register_natives = _libs["../libs/libiwasm.so"].get("wasm_runtime_register_natives", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 1089
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_register_natives", "cdecl"):
+    wasm_runtime_register_natives = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_register_natives", "cdecl")
     wasm_runtime_register_natives.argtypes = [String, POINTER(NativeSymbol), uint32_t]
     wasm_runtime_register_natives.restype = c_bool
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1104
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_register_natives_raw", "cdecl"):
-    wasm_runtime_register_natives_raw = _libs["../libs/libiwasm.so"].get("wasm_runtime_register_natives_raw", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 1104
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_register_natives_raw", "cdecl"):
+    wasm_runtime_register_natives_raw = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_register_natives_raw", "cdecl")
     wasm_runtime_register_natives_raw.argtypes = [String, POINTER(NativeSymbol), uint32_t]
     wasm_runtime_register_natives_raw.restype = c_bool
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1123
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_unregister_natives", "cdecl"):
-    wasm_runtime_unregister_natives = _libs["../libs/libiwasm.so"].get("wasm_runtime_unregister_natives", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 1123
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_unregister_natives", "cdecl"):
+    wasm_runtime_unregister_natives = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_unregister_natives", "cdecl")
     wasm_runtime_unregister_natives.argtypes = [String, POINTER(NativeSymbol)]
     wasm_runtime_unregister_natives.restype = c_bool
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1133
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_get_function_attachment", "cdecl"):
-    wasm_runtime_get_function_attachment = _libs["../libs/libiwasm.so"].get("wasm_runtime_get_function_attachment", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 1133
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_get_function_attachment", "cdecl"):
+    wasm_runtime_get_function_attachment = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_get_function_attachment", "cdecl")
     wasm_runtime_get_function_attachment.argtypes = [wasm_exec_env_t]
     wasm_runtime_get_function_attachment.restype = POINTER(c_ubyte)
     wasm_runtime_get_function_attachment.errcheck = lambda v,*a : cast(v, c_void_p)
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1143
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_set_user_data", "cdecl"):
-    wasm_runtime_set_user_data = _libs["../libs/libiwasm.so"].get("wasm_runtime_set_user_data", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 1143
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_set_user_data", "cdecl"):
+    wasm_runtime_set_user_data = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_set_user_data", "cdecl")
     wasm_runtime_set_user_data.argtypes = [wasm_exec_env_t, POINTER(None)]
     wasm_runtime_set_user_data.restype = None
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1152
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_get_user_data", "cdecl"):
-    wasm_runtime_get_user_data = _libs["../libs/libiwasm.so"].get("wasm_runtime_get_user_data", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 1152
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_get_user_data", "cdecl"):
+    wasm_runtime_get_user_data = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_get_user_data", "cdecl")
     wasm_runtime_get_user_data.argtypes = [wasm_exec_env_t]
     wasm_runtime_get_user_data.restype = POINTER(c_ubyte)
     wasm_runtime_get_user_data.errcheck = lambda v,*a : cast(v, c_void_p)
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1165
+# ../../../../../core/iwasm/include/wasm_export.h: 1165
 for _lib in _libs.values():
     if not _lib.has("wasm_runtime_dump_mem_consumption", "cdecl"):
         continue
@@ -1608,7 +1589,7 @@ for _lib in _libs.values():
     wasm_runtime_dump_mem_consumption.restype = None
     break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1173
+# ../../../../../core/iwasm/include/wasm_export.h: 1173
 for _lib in _libs.values():
     if not _lib.has("wasm_runtime_dump_perf_profiling", "cdecl"):
         continue
@@ -1617,11 +1598,11 @@ for _lib in _libs.values():
     wasm_runtime_dump_perf_profiling.restype = None
     break
 
-wasm_thread_callback_t = CFUNCTYPE(UNCHECKED(POINTER(c_ubyte)), wasm_exec_env_t, POINTER(None))# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1176
+wasm_thread_callback_t = CFUNCTYPE(UNCHECKED(POINTER(c_ubyte)), wasm_exec_env_t, POINTER(None))# ../../../../../core/iwasm/include/wasm_export.h: 1176
 
-wasm_thread_t = uintptr_t# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1178
+wasm_thread_t = uintptr_t# ../../../../../core/iwasm/include/wasm_export.h: 1178
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1186
+# ../../../../../core/iwasm/include/wasm_export.h: 1186
 for _lib in _libs.values():
     if not _lib.has("wasm_runtime_set_max_thread_num", "cdecl"):
         continue
@@ -1630,7 +1611,7 @@ for _lib in _libs.values():
     wasm_runtime_set_max_thread_num.restype = None
     break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1197
+# ../../../../../core/iwasm/include/wasm_export.h: 1197
 for _lib in _libs.values():
     if not _lib.has("wasm_runtime_spawn_exec_env", "cdecl"):
         continue
@@ -1639,7 +1620,7 @@ for _lib in _libs.values():
     wasm_runtime_spawn_exec_env.restype = wasm_exec_env_t
     break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1205
+# ../../../../../core/iwasm/include/wasm_export.h: 1205
 for _lib in _libs.values():
     if not _lib.has("wasm_runtime_destroy_spawned_exec_env", "cdecl"):
         continue
@@ -1648,7 +1629,7 @@ for _lib in _libs.values():
     wasm_runtime_destroy_spawned_exec_env.restype = None
     break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1218
+# ../../../../../core/iwasm/include/wasm_export.h: 1218
 for _lib in _libs.values():
     if not _lib.has("wasm_runtime_spawn_thread", "cdecl"):
         continue
@@ -1657,7 +1638,7 @@ for _lib in _libs.values():
     wasm_runtime_spawn_thread.restype = c_int32
     break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1230
+# ../../../../../core/iwasm/include/wasm_export.h: 1230
 for _lib in _libs.values():
     if not _lib.has("wasm_runtime_join_thread", "cdecl"):
         continue
@@ -1666,7 +1647,7 @@ for _lib in _libs.values():
     wasm_runtime_join_thread.restype = c_int32
     break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1244
+# ../../../../../core/iwasm/include/wasm_export.h: 1244
 for _lib in _libs.values():
     if not _lib.has("wasm_externref_obj2ref", "cdecl"):
         continue
@@ -1675,7 +1656,7 @@ for _lib in _libs.values():
     wasm_externref_obj2ref.restype = c_bool
     break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1257
+# ../../../../../core/iwasm/include/wasm_export.h: 1257
 for _lib in _libs.values():
     if not _lib.has("wasm_externref_ref2obj", "cdecl"):
         continue
@@ -1684,7 +1665,7 @@ for _lib in _libs.values():
     wasm_externref_ref2obj.restype = c_bool
     break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1269
+# ../../../../../core/iwasm/include/wasm_export.h: 1269
 for _lib in _libs.values():
     if not _lib.has("wasm_externref_retain", "cdecl"):
         continue
@@ -1693,7 +1674,7 @@ for _lib in _libs.values():
     wasm_externref_retain.restype = c_bool
     break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1277
+# ../../../../../core/iwasm/include/wasm_export.h: 1277
 for _lib in _libs.values():
     if not _lib.has("wasm_runtime_dump_call_stack", "cdecl"):
         continue
@@ -1702,7 +1683,7 @@ for _lib in _libs.values():
     wasm_runtime_dump_call_stack.restype = None
     break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1288
+# ../../../../../core/iwasm/include/wasm_export.h: 1288
 for _lib in _libs.values():
     if not _lib.has("wasm_runtime_get_call_stack_buf_size", "cdecl"):
         continue
@@ -1711,7 +1692,7 @@ for _lib in _libs.values():
     wasm_runtime_get_call_stack_buf_size.restype = uint32_t
     break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1304
+# ../../../../../core/iwasm/include/wasm_export.h: 1304
 for _lib in _libs.values():
     if not _lib.has("wasm_runtime_dump_call_stack_to_buf", "cdecl"):
         continue
@@ -1720,7 +1701,7 @@ for _lib in _libs.values():
     wasm_runtime_dump_call_stack_to_buf.restype = uint32_t
     break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1317
+# ../../../../../core/iwasm/include/wasm_export.h: 1317
 for _lib in _libs.values():
     if not _lib.has("wasm_runtime_get_custom_section", "cdecl"):
         continue
@@ -1729,49 +1710,49 @@ for _lib in _libs.values():
     wasm_runtime_get_custom_section.restype = POINTER(uint8_t)
     break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1326
-if _libs["../libs/libiwasm.so"].has("wasm_runtime_get_version", "cdecl"):
-    wasm_runtime_get_version = _libs["../libs/libiwasm.so"].get("wasm_runtime_get_version", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 1326
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_get_version", "cdecl"):
+    wasm_runtime_get_version = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_get_version", "cdecl")
     wasm_runtime_get_version.argtypes = [POINTER(uint32_t), POINTER(uint32_t), POINTER(uint32_t)]
     wasm_runtime_get_version.restype = None
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1333
-for _lib in _libs.values():
-    if not _lib.has("wasm_runtime_is_import_func_linked", "cdecl"):
-        continue
-    wasm_runtime_is_import_func_linked = _lib.get("wasm_runtime_is_import_func_linked", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 1333
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_is_import_func_linked", "cdecl"):
+    wasm_runtime_is_import_func_linked = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_is_import_func_linked", "cdecl")
     wasm_runtime_is_import_func_linked.argtypes = [String, String]
     wasm_runtime_is_import_func_linked.restype = c_bool
-    break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 1341
-for _lib in _libs.values():
-    if not _lib.has("wasm_runtime_is_import_global_linked", "cdecl"):
-        continue
-    wasm_runtime_is_import_global_linked = _lib.get("wasm_runtime_is_import_global_linked", "cdecl")
+# ../../../../../core/iwasm/include/wasm_export.h: 1341
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_is_import_global_linked", "cdecl"):
+    wasm_runtime_is_import_global_linked = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_is_import_global_linked", "cdecl")
     wasm_runtime_is_import_global_linked.argtypes = [String, String]
     wasm_runtime_is_import_global_linked.restype = c_bool
-    break
 
-# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 31
+# /Users/yamamoto/evp_agent/wasm_hack.h: 24
+if _libs["../libs/libiwasm.dylib"].has("wasm_runtime_call_indirect", "cdecl"):
+    wasm_runtime_call_indirect = _libs["../libs/libiwasm.dylib"].get("wasm_runtime_call_indirect", "cdecl")
+    wasm_runtime_call_indirect.argtypes = [wasm_exec_env_t, uint32_t, uint32_t, POINTER(uint32_t)]
+    wasm_runtime_call_indirect.restype = c_bool
+
+# ../../../../../core/iwasm/include/wasm_export.h: 31
 def get_module_inst(exec_env):
     return (wasm_runtime_get_module_inst (exec_env))
 
-WASMModuleCommon = struct_WASMModuleCommon# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 62
+WASMModuleCommon = struct_WASMModuleCommon# ../../../../../core/iwasm/include/wasm_export.h: 62
 
-WASMModuleInstanceCommon = struct_WASMModuleInstanceCommon# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 67
+WASMModuleInstanceCommon = struct_WASMModuleInstanceCommon# ../../../../../core/iwasm/include/wasm_export.h: 67
 
-wasm_section_t = struct_wasm_section_t# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 75
+wasm_section_t = struct_wasm_section_t# ../../../../../core/iwasm/include/wasm_export.h: 75
 
-WASMExecEnv = struct_WASMExecEnv# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 86
+WASMExecEnv = struct_WASMExecEnv# ../../../../../core/iwasm/include/wasm_export.h: 86
 
-MemAllocOption = union_MemAllocOption# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 124
+MemAllocOption = union_MemAllocOption# ../../../../../core/iwasm/include/wasm_export.h: 124
 
-mem_alloc_info_t = struct_mem_alloc_info_t# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 132
+mem_alloc_info_t = struct_mem_alloc_info_t# ../../../../../core/iwasm/include/wasm_export.h: 132
 
-RuntimeInitArgs = struct_RuntimeInitArgs# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 170
+RuntimeInitArgs = struct_RuntimeInitArgs# ../../../../../core/iwasm/include/wasm_export.h: 170
 
-wasm_val_t = struct_wasm_val_t# wasm-micro-runtime/core/iwasm/include/wasm_export.h: 199
+wasm_val_t = struct_wasm_val_t# ../../../../../core/iwasm/include/wasm_export.h: 199
 
 # No inserted files
 
