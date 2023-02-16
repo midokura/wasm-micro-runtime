@@ -9,11 +9,35 @@
 # pylint: disable=missing-module-docstring
 
 import pathlib
+<<<<<<< HEAD
 from setuptools import setup, find_packages
 from setuptools.command.develop import develop
 from setuptools.command.install import install
 from setuptools.command.egg_info import egg_info
 from subprocess import check_call
+=======
+from setuptools import setup
+from setuptools.command.develop import develop
+from setuptools.command.install import install
+from subprocess import check_call
+
+
+def build_library():
+    cur_path = pathlib.Path(__file__).parent
+    check_call(f"{cur_path}/utils/create_lib.sh".split())
+
+class PreDevelopCommand(develop):
+    """Pre-installation for development mode."""
+    def run(self):
+        build_library()
+        develop.run(self)
+
+class PreInstallCommand(install):
+    """Pre-installation for installation mode."""
+    def run(self):
+        build_library()
+        install.run(self)
+>>>>>>> 3cc132e8... Add WAMR API bindings in Python (#1959)
 
 
 def read_file(file: str) -> str:
@@ -71,8 +95,9 @@ setup(
     package_dir={"": "src"},
     author="The WAMR Project Developers",
     author_email="hello@bytecodealliance.org",
-    url="https://github.com/bytecodealliance/wamr-python",
+    url="https://github.com/bytecodealliance/wasm-micro-runtime",
     license=license,
+<<<<<<< HEAD
 =======
     long_description=read_file("README.md"),
     packages=find_packages(where="src"),
@@ -83,10 +108,15 @@ setup(
     license=read_file("LICENSE"),
     python_requires='>=3.8',
 >>>>>>> 8b47308a... Improve setup
+=======
+>>>>>>> 3cc132e8... Add WAMR API bindings in Python (#1959)
     include_package_data=True,
     cmdclass={
         'develop': PreDevelopCommand,
         'install': PreInstallCommand,
+<<<<<<< HEAD
         'egg_info': PreEggInfoCommand,
+=======
+>>>>>>> 3cc132e8... Add WAMR API bindings in Python (#1959)
     },
 )

@@ -10,7 +10,11 @@ from ctypes import cast
 from ctypes import create_string_buffer
 from ctypes import POINTER
 from ctypes import pointer
+<<<<<<< HEAD
 from wamr.wamrapi.iwasm import String
+=======
+
+>>>>>>> 3cc132e8... Add WAMR API bindings in Python (#1959)
 from wamr.wamrapi.iwasm import Alloc_With_Pool
 from wamr.wamrapi.iwasm import RuntimeInitArgs
 from wamr.wamrapi.iwasm import wasm_exec_env_t
@@ -27,15 +31,21 @@ from wamr.wamrapi.iwasm import wasm_runtime_instantiate
 from wamr.wamrapi.iwasm import wasm_runtime_load
 from wamr.wamrapi.iwasm import wasm_runtime_lookup_function
 from wamr.wamrapi.iwasm import wasm_runtime_unload
+<<<<<<< HEAD
 from wamr.wamrapi.iwasm import wasm_runtime_module_malloc
 from wamr.wamrapi.iwasm import wasm_runtime_module_free
 from wamr.wamrapi.iwasm import wasm_runtime_register_natives
 from wamr.wamrapi.iwasm import NativeSymbol
+=======
+>>>>>>> 3cc132e8... Add WAMR API bindings in Python (#1959)
 
 
 class Engine:
     def __init__(self):
+<<<<<<< HEAD
         self._native_symbols = dict()
+=======
+>>>>>>> 3cc132e8... Add WAMR API bindings in Python (#1959)
         self.init_args = self._get_init_args()
         wasm_runtime_full_init(pointer(self.init_args))
 
@@ -52,6 +62,7 @@ class Engine:
         init_args.mem_alloc_option.pool.heap_size = heap_size
         return init_args
 
+<<<<<<< HEAD
     def register_natives(self, module_name: str, native_symbols: list[NativeSymbol]) -> None:
         module_name = String.from_param(module_name)
         # WAMR does not copy the symbols. We must store them.
@@ -67,6 +78,8 @@ class Engine:
             len(native_symbols)
         ):
             raise Exception("Error while registering symbols")
+=======
+>>>>>>> 3cc132e8... Add WAMR API bindings in Python (#1959)
 
 class Module:
     __create_key = object()
@@ -107,6 +120,7 @@ class Instance:
         print("deleting Instance")
         wasm_runtime_deinstantiate(self.module_inst)
 
+<<<<<<< HEAD
     def malloc(self, nbytes: int, native_handler) -> c_uint:
         return wasm_runtime_module_malloc(self.module_inst, nbytes, native_handler)
 
@@ -114,6 +128,9 @@ class Instance:
         wasm_runtime_module_free(self.module_inst, wasm_handler)
 
     def lookup_function(self, name: str) -> wasm_function_inst_t:
+=======
+    def lookup_function(self, name: str):
+>>>>>>> 3cc132e8... Add WAMR API bindings in Python (#1959)
         func = wasm_runtime_lookup_function(self.module_inst, name, None)
         if not func:
             raise Exception("Error while looking-up function")

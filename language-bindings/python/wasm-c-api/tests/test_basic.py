@@ -12,7 +12,11 @@ import ctypes as c
 import unittest
 from venv import create
 
+<<<<<<< HEAD
 from wamr.ffi import *
+=======
+from wamr.wasmcapi.ffi import *
+>>>>>>> 3cc132e8... Add WAMR API bindings in Python (#1959)
 
 # It is a module likes:
 # (module

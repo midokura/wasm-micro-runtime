@@ -1,7 +1,11 @@
 # Copyright (C) 2019 Intel Corporation.  All rights reserved.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
+<<<<<<< HEAD
 from wamr.wamr_api.wamr import Engine, Module, Instance, ExecEnv
+=======
+from wamr.wamrapi.wamr import Engine, Module, Instance, ExecEnv
+>>>>>>> 3cc132e8... Add WAMR API bindings in Python (#1959)
 from ctypes import c_uint
 import pathlib
 

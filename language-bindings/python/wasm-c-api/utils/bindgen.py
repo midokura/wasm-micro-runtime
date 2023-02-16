@@ -21,7 +21,11 @@ import sys
 from pycparser import c_ast, parse_file
 
 WASM_C_API_HEADER = "core/iwasm/include/wasm_c_api.h"
+<<<<<<< HEAD
 BINDING_PATH = "wamr/binding.py"
+=======
+BINDING_PATH = "language-bindings/python/wamr/wasmcapi/binding.py"
+>>>>>>> 3cc132e8... Add WAMR API bindings in Python (#1959)
 # 4 spaces as default indent
 INDENT = "    "
 
@@ -314,7 +318,11 @@ class Visitor(c_ast.NodeVisitor):
 
 
 def preflight_check(workspace):
+<<<<<<< HEAD
     wamr_repo = workspace.joinpath("wasm-micro-runtime")
+=======
+    wamr_repo = workspace
+>>>>>>> 3cc132e8... Add WAMR API bindings in Python (#1959)
     file_check_list = [
         wamr_repo.exists(),
         wamr_repo.joinpath(WASM_C_API_HEADER).exists(),
@@ -369,12 +377,20 @@ def main():
         current_file = pathlib.Path(os.readlink(current_file))
 
     current_dir = current_file.parent.resolve()
+<<<<<<< HEAD
     root_dir = current_dir.joinpath("..").resolve()
+=======
+    root_dir = current_dir.joinpath("../../../..").resolve()
+>>>>>>> 3cc132e8... Add WAMR API bindings in Python (#1959)
 
     if not preflight_check(root_dir):
         return False
 
+<<<<<<< HEAD
     wamr_repo = root_dir.joinpath("wasm-micro-runtime")
+=======
+    wamr_repo = root_dir
+>>>>>>> 3cc132e8... Add WAMR API bindings in Python (#1959)
     binding_file_path = root_dir.joinpath(BINDING_PATH)
     with open(binding_file_path, "wt", encoding="utf-8") as binding_file:
         binding_file.write(do_parse(wamr_repo))
