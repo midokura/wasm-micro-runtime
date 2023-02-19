@@ -167,7 +167,7 @@ add_executable (iwasm ${WAMR_ROOT_DIR}/product-mini/platforms/${WAMR_BUILD_PLATF
 
 install (TARGETS iwasm DESTINATION bin)
 
-target_link_libraries (iwasm vmlib ${LLVM_AVAILABLE_LIBS} ${UV_A_LIBS} ${TENSORFLOW_LIB} -lm -ldl -lpthread)
+target_link_libraries (iwasm vmlib ${LLVM_AVAILABLE_LIBS} ${UV_A_LIBS} ${NN_STATIC_LIB} -lm -ldl -lpthread)
 
 add_library (libiwasm SHARED ${WAMR_RUNTIME_LIB_SOURCE})
 
