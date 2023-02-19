@@ -5,6 +5,32 @@ set (WASI_NN_DIR ${CMAKE_CURRENT_LIST_DIR})
 
 add_definitions (-DWASM_ENABLE_WASI_NN=1)
 
+
+#find_package(tensorflow-lite REQUIRED)
+find_library(tensorflow-lite NAMES libtensorflow-lite.so)
+if("${tensorflow-lite}" STREQUAL "tensorflow-lite-NOTFOUND")
+    if (NOT EXISTS "${WAMR_ROOT_DIR}/core/deps/tensorflow-src")
+        execute_process(COMMAND ${WAMR_ROOT_DIR}/core/deps/install_tensorflow.sh
+                        RESULT_VARIABLE TENSORFLOW_RESULT
+        )
+    else ()
+        message("Tensorflow is already downloaded.")
+    endif()
+    set(TENSORFLOW_SOURCE_DIR "${WAMR_ROOT_DIR}/core/deps/tensorflow-src")
+    include_directories (${CMAKE_CURRENT_BINARY_DIR}/flatbuffers/include)
+    include_directories (${TENSORFLOW_SOURCE_DIR})
+    add_subdirectory(
+        "${TENSORFLOW_SOURCE_DIR}/tensorflow/lite"
+        "${CMAKE_CURRENT_BINARY_DIR}/tensorflow-lite" EXCLUDE_FROM_ALL)      
+endif()
+
+if(TFLITE_ENABLE_EXTERNAL_DELEGATE)
+add_compile_definitions(-D_TFLITE_ENABLE_EXTERNAL_DELEGATE)
+endif()
+if(TFLITE_ENABLE_GPU)
+add_compile_definitions(-D_TFLITE_ENABLE_GPU)
+endif()
+
 include_directories (${WASI_NN_DIR})
 include_directories (${WASI_NN_DIR}/src)
 include_directories (${WASI_NN_DIR}/src/utils)
@@ -16,4 +42,10 @@ set (
     ${WASI_NN_DIR}/src/utils/wasi_nn_app_native.c
 )
 
-set (TENSORFLOW_LIB tensorflow-lite)
+if(TFLITE_BUILD_SHARED_LIB EQUAL ON)
+set (NN_STATIC_LIB)
+set (NN_SHARED_LIB tensorflow-lite stdc++ pthread m -ldl rt)
+else()
+set (NN_STATIC_LIB tensorflow-lite stdc++ pthread m -ldl rt)
+set (NN_SHARED_LIB)
+endif()

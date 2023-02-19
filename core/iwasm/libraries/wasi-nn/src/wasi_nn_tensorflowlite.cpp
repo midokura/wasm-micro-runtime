@@ -18,6 +18,9 @@
 #include <tensorflow/lite/error_reporter.h>
 #include <tensorflow/lite/delegates/gpu/delegate.h>
 
+#ifdef TFLITE_DELEGATES_EXTERNAL
+#include <tensorflow/lite/delegates/external/external_delegate.h>
+#endif
 /* Global variables */
 
 static std::unique_ptr<tflite::Interpreter> interpreter;
@@ -84,17 +87,32 @@ tensorflowlite_load(graph_builder_array *builder, graph_encoding encoding,
     switch (target) {
         case gpu:
         {
+#ifdef _TFLITE_ENABLE_EXTERNAL_DELEGATE            
+            TfLiteExternalDelegateOptions options;
+            // https://www.tensorflow.org/lite/performance/gpu
+            options = TfLiteExternalDelegateOptionsDefault ("/usr/lib/libvx_delegate.so");
+
+            auto *delegate = TfLiteExternalDelegateCreate(&options);
+            if (interpreter->ModifyGraphWithDelegate(delegate) != kTfLiteOk) {
+                NN_ERR_PRINTF("Error when enabling GPU delegate.");
+                use_default = true;
+            }            
+#elseif _TFLITE_ENABLE_GPU
             // https://www.tensorflow.org/lite/performance/gpu
             auto options = TfLiteGpuDelegateOptionsV2Default();
             options.inference_preference =
                 TFLITE_GPU_INFERENCE_PREFERENCE_SUSTAINED_SPEED;
             options.inference_priority1 =
                 TFLITE_GPU_INFERENCE_PRIORITY_MIN_LATENCY;
+              
             auto *delegate = TfLiteGpuDelegateV2Create(&options);
             if (interpreter->ModifyGraphWithDelegate(delegate) != kTfLiteOk) {
                 NN_ERR_PRINTF("Error when enabling GPU delegate.");
                 use_default = true;
-            }
+            } 
+#else                       
+#endif              
+
             break;
         }
         default:
