@@ -1,7 +1,7 @@
 # Copyright (C) 2019 Intel Corporation.  All rights reserved.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-
-from ctypes import Array
+import copy
+from ctypes import Array, addressof
 from ctypes import c_char
 from ctypes import c_uint
 from ctypes import c_uint8
@@ -10,11 +10,8 @@ from ctypes import cast
 from ctypes import create_string_buffer
 from ctypes import POINTER
 from ctypes import pointer
-<<<<<<< HEAD
+from typing import List, Tuple
 from wamr.wamrapi.iwasm import String
-=======
-
->>>>>>> 3cc132e8... Add WAMR API bindings in Python (#1959)
 from wamr.wamrapi.iwasm import Alloc_With_Pool
 from wamr.wamrapi.iwasm import RuntimeInitArgs
 from wamr.wamrapi.iwasm import wasm_exec_env_t
@@ -31,21 +28,19 @@ from wamr.wamrapi.iwasm import wasm_runtime_instantiate
 from wamr.wamrapi.iwasm import wasm_runtime_load
 from wamr.wamrapi.iwasm import wasm_runtime_lookup_function
 from wamr.wamrapi.iwasm import wasm_runtime_unload
-<<<<<<< HEAD
 from wamr.wamrapi.iwasm import wasm_runtime_module_malloc
 from wamr.wamrapi.iwasm import wasm_runtime_module_free
 from wamr.wamrapi.iwasm import wasm_runtime_register_natives
 from wamr.wamrapi.iwasm import NativeSymbol
-=======
->>>>>>> 3cc132e8... Add WAMR API bindings in Python (#1959)
-
+from wamr.wamrapi.iwasm import wasm_runtime_start_debug_instance
+from wamr.wamrapi.iwasm import wasm_runtime_call_indirect
+from wamr.wamrapi.iwasm import wasm_runtime_get_module_inst
+from wamr.wamrapi.iwasm import wasm_runtime_addr_app_to_native
+from wamr.wamrapi.iwasm import wasm_runtime_addr_native_to_app
 
 class Engine:
     def __init__(self):
-<<<<<<< HEAD
         self._native_symbols = dict()
-=======
->>>>>>> 3cc132e8... Add WAMR API bindings in Python (#1959)
         self.init_args = self._get_init_args()
         wasm_runtime_full_init(pointer(self.init_args))
 
@@ -53,17 +48,19 @@ class Engine:
         print("deleting Engine")
         wasm_runtime_destroy()
 
-    def _get_init_args(self, heap_size: int = 1024 * 512) -> RuntimeInitArgs:
+    def _get_init_args(self, heap_size: int = 1024 * 512 + 544768) -> RuntimeInitArgs:
         init_args = RuntimeInitArgs()
         init_args.mem_alloc_type = Alloc_With_Pool
         init_args.mem_alloc_option.pool.heap_buf = cast(
             (c_char * heap_size)(), c_void_p
         )
         init_args.mem_alloc_option.pool.heap_size = heap_size
+        # debug port setting
+        init_args.ip_addr = bytes('127.0.0.1', 'ascii')
+        init_args.instance_port = 1234        
         return init_args
 
-<<<<<<< HEAD
-    def register_natives(self, module_name: str, native_symbols: list[NativeSymbol]) -> None:
+    def register_natives(self, module_name: str, native_symbols: List[NativeSymbol]) -> None:
         module_name = String.from_param(module_name)
         # WAMR does not copy the symbols. We must store them.
         for native in native_symbols:
@@ -78,8 +75,6 @@ class Engine:
             len(native_symbols)
         ):
             raise Exception("Error while registering symbols")
-=======
->>>>>>> 3cc132e8... Add WAMR API bindings in Python (#1959)
 
 class Module:
     __create_key = object()
@@ -87,6 +82,7 @@ class Module:
     @classmethod
     def from_file(cls, engine: Engine, fp: str) -> "Module":
         return Module(cls.__create_key, engine, fp)
+
 
     def __init__(self, create_key: object, engine: Engine, fp: str) -> None:
         assert (
@@ -99,7 +95,8 @@ class Module:
         print("deleting Module")
         wasm_runtime_unload(self.module)
 
-    def _create_module(self, fp: str) -> tuple[wasm_module_t, Array[c_uint]]:
+    def _create_module(self, fp: str) -> Tuple[wasm_module_t, "Array[c_uint]"]:
+        # XXX: String type for Python <= 3.8: "TypeError: '_ctypes.PyCArrayType' object is not subscriptable"
         with open(fp, "rb") as f:
             data = f.read()
             data = (c_uint8 * len(data))(*data)
@@ -120,7 +117,6 @@ class Instance:
         print("deleting Instance")
         wasm_runtime_deinstantiate(self.module_inst)
 
-<<<<<<< HEAD
     def malloc(self, nbytes: int, native_handler) -> c_uint:
         return wasm_runtime_module_malloc(self.module_inst, nbytes, native_handler)
 
@@ -128,13 +124,16 @@ class Instance:
         wasm_runtime_module_free(self.module_inst, wasm_handler)
 
     def lookup_function(self, name: str) -> wasm_function_inst_t:
-=======
-    def lookup_function(self, name: str):
->>>>>>> 3cc132e8... Add WAMR API bindings in Python (#1959)
         func = wasm_runtime_lookup_function(self.module_inst, name, None)
         if not func:
             raise Exception("Error while looking-up function")
         return func
+    
+    def native_addr_to_app_addr(self, native_addr) -> c_void_p:
+        return wasm_runtime_addr_native_to_app(self.module_inst, native_addr)
+
+    def app_addr_to_native_addr(self, app_addr) -> c_void_p:
+        return wasm_runtime_addr_app_to_native(self.module_inst, app_addr)
 
     def _create_module_inst(self, module: Module, stack_size: int, heap_size: int) -> wasm_module_inst_t:
         error_buf = create_string_buffer(128)
@@ -145,22 +144,51 @@ class Instance:
             raise Exception("Error while creating module instance")
         return module_inst
 
+exec_env_list = {} # to keep a reference to the ExecEnv object
+_exec_env = None # XXX: hack to keep it for creating new exec_env in case of other threads
 
 class ExecEnv:
     def __init__(self, module_inst: Instance, stack_size: int = 65536):
         self.module_inst = module_inst
-        self.exec_env = self._create_exec_env(module_inst, stack_size)
+        self.exec_env = self._create_exec_env(module_inst, stack_size)       
+
+        global exec_env_list
+        exec_env_list[str(addressof(self.exec_env.contents))] = self
+        global _exec_env
+        _exec_env = self
 
     def __del__(self):
         print("deleting ExecEnv")
-        wasm_runtime_destroy_exec_env(self.exec_env)
+        #wasm_runtime_destroy_exec_env(self.exec_env)
 
     def call(self, func: wasm_function_inst_t, argc: int, argv: "POINTER[c_uint]"):
         if not wasm_runtime_call_wasm(self.exec_env, func, argc, argv):
             raise Exception("Error while calling function")
+        
+    def get_module_inst(self) -> Instance:
+        self.module_inst.module_inst = wasm_runtime_get_module_inst(self.exec_env)
+        return self.module_inst
+        
+    def start_debugging(self) -> int:
+        return wasm_runtime_start_debug_instance(self.exec_env)
 
+        
     def _create_exec_env(self, module_inst: Instance, stack_size: int) -> wasm_exec_env_t:
         exec_env = wasm_runtime_create_exec_env(module_inst.module_inst, stack_size)
         if not exec_env:
             raise Exception("Error while creating execution environment")
         return exec_env
+
+    def call_indirect(self, element_index: int, argc: int, argv: "POINTER[c_uint]"):
+        if not wasm_runtime_call_indirect(self.exec_env, element_index, argc, argv):
+            raise Exception("Error while calling function")
+
+    @staticmethod
+    def wrap(env: int) -> "ExecEnv":
+        if str(env) in exec_env_list:
+            return exec_env_list[str(env)]
+        else:
+            exec_env = copy.copy(_exec_env) 
+            exec_env.exec_env = cast (env, wasm_exec_env_t)
+            exec_env_list[str(env)] = exec_env
+            return exec_env

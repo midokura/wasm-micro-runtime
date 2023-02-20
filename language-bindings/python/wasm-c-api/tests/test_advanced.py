@@ -12,11 +12,7 @@ import ctypes as c
 import math
 import unittest
 
-<<<<<<< HEAD
-import wamr.ffi as ffi
-=======
 import wamr.wasmcapi.ffi as ffi
->>>>>>> 3cc132e8... Add WAMR API bindings in Python (#1959)
 
 
 # It is a module likes:

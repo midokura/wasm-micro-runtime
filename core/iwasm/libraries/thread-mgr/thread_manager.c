@@ -766,27 +766,9 @@ wasm_cluster_exit_thread(WASMExecEnv *exec_env, void *retval)
     free_aux_stack(cluster, exec_env->aux_stack_bottom.bottom);
     /* Detach the native thread here to ensure the resources are freed */
     wasm_cluster_detach_thread(exec_env);
-<<<<<<< HEAD
     /* Remove and destroy exec_env */
-=======
-
-    os_mutex_lock(&cluster->lock);
-
-    module_inst = exec_env->module_inst;
-
-    /* Free aux stack space */
-    free_aux_stack(exec_env, exec_env->aux_stack_bottom.bottom);
-    /* Remove exec_env */
->>>>>>> adc20f60... Fix several issues found (#1996)
     wasm_cluster_del_exec_env(cluster, exec_env);
     wasm_exec_env_destroy_internal(exec_env);
-<<<<<<< HEAD
-=======
-    /* Routine exit, destroy instance */
-    wasm_runtime_deinstantiate_internal(module_inst, true);
-
-    os_mutex_unlock(&cluster->lock);
->>>>>>> adc20f60... Fix several issues found (#1996)
 
     os_thread_exit(retval);
 }

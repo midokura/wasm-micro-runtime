@@ -5,11 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 #
 import ctypes
-<<<<<<< HEAD
-import wamr.ffi as ffi
-=======
 import wamr.wasmcapi.ffi as ffi
->>>>>>> 3cc132e8... Add WAMR API bindings in Python (#1959)
 
 WAMS_BINARY_CONTENT = (
     b"\x00asm\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01`\x00\x00\x02\x8a\x80"

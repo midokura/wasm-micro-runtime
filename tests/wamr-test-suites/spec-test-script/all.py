@@ -191,16 +191,6 @@ def test_case(
     if not clean_up_flag:
         CMD.append("--no_cleanup")
 
-<<<<<<< HEAD
-=======
-    if gc_flag:
-        CMD.append("--gc")
-
-    if log != '':
-        CMD.append("--log-dir")
-        CMD.append(log)
-
->>>>>>> cfbf29ef... Update cmake files and wamr-test-suites to support collect code coverage (#1992)
     CMD.append(case_path)
     print(f"============> run {case_name} ", end="")
     with subprocess.Popen(
