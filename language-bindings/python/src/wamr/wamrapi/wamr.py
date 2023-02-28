@@ -87,7 +87,8 @@ class Module:
         print("deleting Module")
         wasm_runtime_unload(self.module)
 
-    def _create_module(self, fp: str) -> Tuple[wasm_module_t, Array[c_uint]]:
+    def _create_module(self, fp: str) -> Tuple[wasm_module_t, "Array[c_uint]"]:
+        # XXX: String type for Python <= 3.8: "TypeError: '_ctypes.PyCArrayType' object is not subscriptable"
         with open(fp, "rb") as f:
             data = f.read()
             data = (c_uint8 * len(data))(*data)
