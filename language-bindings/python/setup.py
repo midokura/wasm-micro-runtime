@@ -9,9 +9,10 @@
 # pylint: disable=missing-module-docstring
 
 import pathlib
-from setuptools import setup
+from setuptools import setup, find_packages
 from setuptools.command.develop import develop
 from setuptools.command.install import install
+from setuptools.command.egg_info import egg_info
 from subprocess import check_call
 
 
@@ -24,20 +25,29 @@ def build_library():
     cur_path = pathlib.Path(__file__).parent
     check_call(f"{cur_path}/utils/create_lib.sh".split())
 
+
 class PreDevelopCommand(develop):
-    """Pre-installation for development mode."""
     def run(self):
         build_library()
         develop.run(self)
 
+
 class PreInstallCommand(install):
-    """Pre-installation for installation mode."""
     def run(self):
         build_library()
         install.run(self)
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+class PreEggInfoCommand(egg_info):
+    def run(self):
+        build_library()
+        egg_info.run(self)
+
+
+>>>>>>> b4f02284... Python WAMR API binding: Add malloc/free and register_native (#1989)
 with open("README.md") as f:
     readme = f.read()
 
@@ -57,6 +67,8 @@ setup(
     description="A WebAssembly runtime powered by WAMR",
 <<<<<<< HEAD
     long_description=readme,
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
     author="The WAMR Project Developers",
     author_email="hello@bytecodealliance.org",
     url="https://github.com/bytecodealliance/wamr-python",
@@ -75,5 +87,6 @@ setup(
     cmdclass={
         'develop': PreDevelopCommand,
         'install': PreInstallCommand,
+        'egg_info': PreEggInfoCommand,
     },
 )
