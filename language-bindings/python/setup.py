@@ -16,6 +16,11 @@ from setuptools.command.egg_info import egg_info
 from subprocess import check_call
 
 
+def read_file(file: str) -> str:
+    with open(file) as f:
+        return f.read()
+
+
 def build_library():
     cur_path = pathlib.Path(__file__).parent
     check_call(f"{cur_path}/utils/create_lib.sh".split())
@@ -39,23 +44,18 @@ class PreEggInfoCommand(egg_info):
         egg_info.run(self)
 
 
-with open("README.md") as f:
-    readme = f.read()
-
-with open("LICENSE") as f:
-    license = f.read()
-
 setup(
     name="wamr-python",
     version="0.1.0",
     description="A WebAssembly runtime powered by WAMR",
-    long_description=readme,
+    long_description=read_file("README.md"),
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     author="The WAMR Project Developers",
     author_email="hello@bytecodealliance.org",
     url="https://github.com/bytecodealliance/wasm-micro-runtime",
-    license=license,
+    license=read_file("LICENSE"),
+    python_requires='>=3.8',
     include_package_data=True,
     cmdclass={
         'develop': PreDevelopCommand,
