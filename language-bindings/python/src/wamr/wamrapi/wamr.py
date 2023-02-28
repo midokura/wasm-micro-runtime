@@ -10,6 +10,7 @@ from ctypes import cast
 from ctypes import create_string_buffer
 from ctypes import POINTER
 from ctypes import pointer
+from typing import List, Tuple
 from wamr.wamrapi.iwasm import String
 from wamr.wamrapi.iwasm import Alloc_With_Pool
 from wamr.wamrapi.iwasm import RuntimeInitArgs
@@ -52,7 +53,7 @@ class Engine:
         init_args.mem_alloc_option.pool.heap_size = heap_size
         return init_args
 
-    def register_natives(self, module_name: str, native_symbols: list[NativeSymbol]) -> None:
+    def register_natives(self, module_name: str, native_symbols: List[NativeSymbol]) -> None:
         module_name = String.from_param(module_name)
         # WAMR does not copy the symbols. We must store them.
         for native in native_symbols:
@@ -86,7 +87,7 @@ class Module:
         print("deleting Module")
         wasm_runtime_unload(self.module)
 
-    def _create_module(self, fp: str) -> tuple[wasm_module_t, Array[c_uint]]:
+    def _create_module(self, fp: str) -> Tuple[wasm_module_t, Array[c_uint]]:
         with open(fp, "rb") as f:
             data = f.read()
             data = (c_uint8 * len(data))(*data)
