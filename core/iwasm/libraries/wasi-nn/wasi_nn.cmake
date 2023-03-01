@@ -46,10 +46,7 @@ set (
     ${WASI_NN_DIR}/src/utils/wasi_nn_app_native.c
 )
 
-if(TFLITE_BUILD_SHARED_LIB EQUAL ON)
-set (NN_STATIC_LIB)
+
 set (NN_SHARED_LIB tensorflow-lite stdc++ pthread m -ldl rt)
-else()
 set (NN_STATIC_LIB tensorflow-lite stdc++ pthread m -ldl rt)
-set (NN_SHARED_LIB)
-endif()
+
