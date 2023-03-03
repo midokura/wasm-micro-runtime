@@ -97,6 +97,7 @@ tensorflowlite_load(graph_builder_array *builder, graph_encoding encoding,
             }            
 #endif
 #ifdef _TFLITE_ENABLE_GPU
+            NN_ERR_PRINTF("enabling GPU delegate.");  
             // https://www.tensorflow.org/lite/performance/gpu
             auto options = TfLiteGpuDelegateOptionsV2Default();
             options.inference_preference =
@@ -169,12 +170,43 @@ tensorflowlite_set_input(graph_execution_context ctx, uint32_t index,
         return invalid_argument;
     }
 
-    auto *input = interpreter->typed_input_tensor<float>(index);
-    if (input == NULL)
-        return missing_memory;
+    NN_ERR_PRINTF("Tensor type %d", interpreter->input_tensor(index)->type);
+    if (interpreter->input_tensor(index)->type == kTfLiteFloat32)
+    {
+        auto *input = interpreter->typed_input_tensor<float>(index);
+        if (input == NULL) {
+            NN_ERR_PRINTF("Tensor type strange");
+            return missing_memory;
+        }
 
-    bh_memcpy_s(input, model_tensor_size * sizeof(float), input_tensor->data,
-                model_tensor_size * sizeof(float));
+        bh_memcpy_s(input, model_tensor_size * sizeof(float), input_tensor->data,
+                    model_tensor_size * sizeof(float));
+    } else if (interpreter->input_tensor(index)->type == kTfLiteInt32)
+    {
+        auto *input = interpreter->typed_input_tensor<int32_t>(index);
+        if (input == NULL) {
+            NN_ERR_PRINTF("Tensor type strange");
+            return missing_memory;
+        }
+
+        bh_memcpy_s(input, model_tensor_size * sizeof(int32_t), input_tensor->data,
+                    model_tensor_size * sizeof(int32_t));
+    } else if (interpreter->input_tensor(index)->type == kTfLiteUInt8)
+    {
+        auto *input = interpreter->typed_input_tensor<uint8_t>(index);
+        if (input == NULL) {
+            NN_ERR_PRINTF("Tensor type strange");
+            return missing_memory;
+        }
+
+        bh_memcpy_s(input, model_tensor_size * sizeof(uint8_t), input_tensor->data,
+                    model_tensor_size * sizeof(uint8_t));
+
+    } else {
+        NN_ERR_PRINTF("Tensor type strange");
+        return missing_memory;
+    }
+ 
     return success;
 }
 
