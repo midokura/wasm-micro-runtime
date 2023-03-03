@@ -63,6 +63,10 @@ PLATFORM=$(uname -s | tr A-Z a-z)
 PARALLELISM=0
 ENABLE_QEMU=0
 QEMU_FIRMWARE=""
+<<<<<<< HEAD
+=======
+WASI_TESTSUITE_COMMIT="aca78d919355ae00af141e6741a439039615b257"
+>>>>>>> 2bae30e8... Add timeout to CI WASI tests and update WASI testsuite commit (#1997)
 
 <<<<<<< HEAD
 while getopts ":s:cabt:m:MCpSXxPQF:" opt

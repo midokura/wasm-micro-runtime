@@ -460,7 +460,16 @@ jobs:
         if: env.USE_LLVM == 'true' && steps.cache_llvm.outputs.cache-hit != 'true'
         run: echo "::error::can not get prebuilt llvm libraries" && exit 1
 
+<<<<<<< HEAD
       - name: run spec tests default and extra
+=======
+      - name: install jq JSON processor
+        if: matrix.running_mode == 'aot' && matrix.test_option == '$WASI_TEST_OPTIONS'
+        run: sudo apt-get update && sudo apt install -y jq
+
+      - name: run tests
+        timeout-minutes: 10
+>>>>>>> 2bae30e8... Add timeout to CI WASI tests and update WASI testsuite commit (#1997)
         run: ./test_wamr.sh ${{ matrix.test_option }} -t ${{ matrix.running_mode }}
         working-directory: ./tests/wamr-test-suites
 
@@ -475,7 +484,12 @@ jobs:
           sudo apt-get update &&
           sudo apt install -y g++-multilib lib32gcc-9-dev
 
+<<<<<<< HEAD
       - name: run spec tests x86_32
+=======
+      - name: run tests x86_32
+        timeout-minutes: 10
+>>>>>>> 2bae30e8... Add timeout to CI WASI tests and update WASI testsuite commit (#1997)
         if: env.TEST_ON_X86_32 == 'true'
         run: ./test_wamr.sh ${{ env.X86_32_TARGET_TEST_OPTIONS }} ${{ matrix.test_option }} -t ${{ matrix.running_mode }}
         working-directory: ./tests/wamr-test-suites
