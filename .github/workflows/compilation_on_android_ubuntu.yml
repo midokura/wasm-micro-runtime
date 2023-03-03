@@ -323,6 +323,25 @@ jobs:
           sudo tar -xzf wabt-1.0.24-*.tar.gz
           sudo mv wabt-1.0.24 wabt
 
+<<<<<<< HEAD
+=======
+      - name: build wasi-libc (needed for wasi-threads)
+        run: |
+          mkdir wasi-libc
+          cd wasi-libc
+          git init
+          # "Rename thread_spawn import" commit on main branch
+          git fetch https://github.com/WebAssembly/wasi-libc \
+            8f5275796a82f8ecfd0833a4f3f444fa37ed4546
+          git checkout FETCH_HEAD
+          make -j \
+            AR=/opt/wasi-sdk/bin/llvm-ar \
+            NM=/opt/wasi-sdk/bin/llvm-nm \
+            CC=/opt/wasi-sdk/bin/clang \
+            THREAD_MODEL=posix
+        working-directory: core/deps
+
+>>>>>>> adc20f60... Fix several issues found (#1996)
       - name: Build Sample [basic]
         run: |
           cd samples/basic
