@@ -47,6 +47,5 @@ set (
 )
 
 
-set (NN_SHARED_LIB tensorflow-lite stdc++ pthread m -ldl rt)
-set (NN_STATIC_LIB tensorflow-lite stdc++ pthread m -ldl rt)
+set (NN_LIBS tensorflow-lite stdc++ pthread m -ldl rt)
 

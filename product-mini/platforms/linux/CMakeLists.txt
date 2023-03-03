@@ -172,7 +172,7 @@ set_target_properties (iwasm PROPERTIES POSITION_INDEPENDENT_CODE ON)
 install (TARGETS iwasm DESTINATION bin)
 
 
-target_link_libraries (iwasm vmlib ${LLVM_AVAILABLE_LIBS} ${UV_A_LIBS} ${NN_STATIC_LIB})
+target_link_libraries (iwasm vmlib ${LLVM_AVAILABLE_LIBS} ${UV_A_LIBS} ${NN_LIBS})
 
 add_library (libiwasm SHARED ${WAMR_RUNTIME_LIB_SOURCE})
 
@@ -180,4 +180,4 @@ install (TARGETS libiwasm DESTINATION lib)
 
 set_target_properties (libiwasm PROPERTIES OUTPUT_NAME iwasm)
 
-target_link_libraries (libiwasm ${LLVM_AVAILABLE_LIBS} ${UV_A_LIBS} ${NN_SHARED_LIB})
+target_link_libraries (libiwasm ${LLVM_AVAILABLE_LIBS} ${UV_A_LIBS} ${NN_LIBS})
