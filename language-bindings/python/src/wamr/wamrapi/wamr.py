@@ -33,6 +33,7 @@ from wamr.wamrapi.iwasm import wasm_runtime_module_free
 from wamr.wamrapi.iwasm import wasm_runtime_register_natives
 from wamr.wamrapi.iwasm import NativeSymbol
 from wamr.wamrapi.iwasm import wasm_runtime_start_debug_instance
+from wamr.wamrapi.iwasm import wasm_runtime_call_indirect
 
 
 
@@ -142,6 +143,7 @@ class ExecEnv:
     def __init__(self, module_inst: Instance, stack_size: int = 65536):
         self.module_inst = module_inst
         self.exec_env = self._create_exec_env(module_inst, stack_size)
+        # TODO: We need to store the exec_env in the global table to handle multiple exec_envs
         global _exec_env
         _exec_env = self
 
@@ -165,6 +167,10 @@ class ExecEnv:
         if not exec_env:
             raise Exception("Error while creating execution environment")
         return exec_env
+
+    def call_indirect(self, element_index: int, argc: int, argv: "POINTER[c_uint]"):
+        if not wasm_runtime_call_indirect(self.exec_env, element_index, argc, argv):
+            raise Exception("Error while calling function")
 
     @staticmethod
     def wrap(env: int) -> "ExecEnv":
