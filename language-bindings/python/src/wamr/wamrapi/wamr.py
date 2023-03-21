@@ -35,8 +35,8 @@ from wamr.wamrapi.iwasm import NativeSymbol
 from wamr.wamrapi.iwasm import wasm_runtime_start_debug_instance
 from wamr.wamrapi.iwasm import wasm_runtime_call_indirect
 from wamr.wamrapi.iwasm import wasm_runtime_get_module_inst
-
-
+from wamr.wamrapi.iwasm import wasm_runtime_addr_app_to_native
+from wamr.wamrapi.iwasm import wasm_runtime_addr_native_to_app
 
 class Engine:
     def __init__(self):
@@ -56,7 +56,6 @@ class Engine:
         )
         init_args.mem_alloc_option.pool.heap_size = heap_size
         # debug port setting
-
         init_args.ip_addr = bytes('127.0.0.1', 'ascii')
         init_args.instance_port = 1234        
         return init_args
@@ -129,6 +128,12 @@ class Instance:
         if not func:
             raise Exception("Error while looking-up function")
         return func
+    
+    def native_addr_to_app_addr(self, native_addr) -> c_void_p:
+        return wasm_runtime_addr_native_to_app(self.module_inst, native_addr)
+
+    def app_addr_to_native_addr(self, app_addr) -> c_void_p:
+        return wasm_runtime_addr_app_to_native(self.module_inst, app_addr)
 
     def _create_module_inst(self, module: Module, stack_size: int, heap_size: int) -> wasm_module_inst_t:
         error_buf = create_string_buffer(128)
