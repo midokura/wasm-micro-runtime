@@ -34,6 +34,8 @@ from wamr.wamrapi.iwasm import wasm_runtime_module_malloc
 from wamr.wamrapi.iwasm import wasm_runtime_module_free
 from wamr.wamrapi.iwasm import wasm_runtime_register_natives
 from wamr.wamrapi.iwasm import NativeSymbol
+from wamr.wamrapi.iwasm import wasm_runtime_start_debug_instance
+
 
 
 class Engine:
@@ -52,6 +54,10 @@ class Engine:
             (c_char * heap_size)(), c_void_p
         )
         init_args.mem_alloc_option.pool.heap_size = heap_size
+        # debug port setting
+
+        init_args.ip_addr = bytes('127.0.0.1', 'ascii')
+        init_args.instance_port = 1234        
         return init_args
 
     def register_natives(self, module_name: str, native_symbols: List[NativeSymbol]) -> None:
@@ -141,9 +147,22 @@ class ExecEnv:
     def call(self, func: wasm_function_inst_t, argc: int, argv: "POINTER[c_uint]"):
         if not wasm_runtime_call_wasm(self.exec_env, func, argc, argv):
             raise Exception("Error while calling function")
+<<<<<<< HEAD:language-bindings/python/src/wamr/wamr_api/wamr.py
 
     def _create_exec_env(self, module_inst: Instance) -> wasm_exec_env_t:
         exec_env = wasm_runtime_create_exec_env(module_inst.module_inst, 8092)
+=======
+        
+    def get_module_inst(self) -> wasm_module_inst_t:
+        return self.module_inst
+        
+    def start_debugging(self) -> int:
+        return wasm_runtime_start_debug_instance(self.exec_env)
+
+        
+    def _create_exec_env(self, module_inst: Instance, stack_size: int) -> wasm_exec_env_t:
+        exec_env = wasm_runtime_create_exec_env(module_inst.module_inst, stack_size)
+>>>>>>> 3875ff85... Add debugger support:language-bindings/python/src/wamr/wamrapi/wamr.py
         if not exec_env:
             raise Exception("Error while creating execution environment")
         return exec_env
