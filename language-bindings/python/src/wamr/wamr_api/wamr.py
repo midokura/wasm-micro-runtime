@@ -1,7 +1,12 @@
 # Copyright (C) 2019 Intel Corporation.  All rights reserved.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+<<<<<<< HEAD:language-bindings/python/src/wamr/wamr_api/wamr.py
 
 from ctypes import CFUNCTYPE, Array, byref
+=======
+import copy
+from ctypes import Array, addressof
+>>>>>>> 6badb324... Handle several exev_env includeing pthread:language-bindings/python/src/wamr/wamrapi/wamr.py
 from ctypes import c_char
 from ctypes import c_uint
 from ctypes import c_uint8
@@ -36,6 +41,7 @@ from wamr.wamrapi.iwasm import wasm_runtime_register_natives
 from wamr.wamrapi.iwasm import NativeSymbol
 from wamr.wamrapi.iwasm import wasm_runtime_start_debug_instance
 from wamr.wamrapi.iwasm import wasm_runtime_call_indirect
+from wamr.wamrapi.iwasm import wasm_runtime_get_module_inst
 
 
 
@@ -83,6 +89,7 @@ class Module:
     @classmethod
     def from_file(cls, engine: Engine, fp: str) -> "Module":
         return Module(cls.__create_key, engine, fp)
+
 
     def __init__(self, create_key: object, engine: Engine, fp: str) -> None:
         assert (
@@ -135,16 +142,24 @@ class Instance:
             raise Exception("Error while creating module instance")
         return module_inst
 
-_exec_env = None
+exec_env_list = {} # to keep a reference to the ExecEnv object
+_exec_env = None # XXX: hack to keep it for creating new exec_env in case of other threads
 
 class ExecEnv:
     def __init__(self, module_inst: Instance):
         self.module_inst = module_inst
 <<<<<<< HEAD:language-bindings/python/src/wamr/wamr_api/wamr.py
+<<<<<<< HEAD:language-bindings/python/src/wamr/wamr_api/wamr.py
         self.exec_env = self._create_exec_env(module_inst)
 =======
         self.exec_env = self._create_exec_env(module_inst, stack_size)
         # TODO: We need to store the exec_env in the global table to handle multiple exec_envs
+=======
+        self.exec_env = self._create_exec_env(module_inst, stack_size)       
+
+        global exec_env_list
+        exec_env_list[str(pointer(self.exec_env))] = self
+>>>>>>> 6badb324... Handle several exev_env includeing pthread:language-bindings/python/src/wamr/wamrapi/wamr.py
         global _exec_env
         _exec_env = self
 >>>>>>> 6688d615... wip:language-bindings/python/src/wamr/wamrapi/wamr.py
@@ -162,7 +177,8 @@ class ExecEnv:
         exec_env = wasm_runtime_create_exec_env(module_inst.module_inst, 8092)
 =======
         
-    def get_module_inst(self) -> wasm_module_inst_t:
+    def get_module_inst(self) -> Instance:
+        self.module_inst.module_inst = wasm_runtime_get_module_inst(self.exec_env)
         return self.module_inst
         
     def start_debugging(self) -> int:
@@ -182,4 +198,10 @@ class ExecEnv:
 
     @staticmethod
     def wrap(env: int) -> "ExecEnv":
-        return _exec_env
+        if str(env) in exec_env_list:
+            return exec_env_list[str(env)]
+        else:
+            exec_env = copy.copy(_exec_env) 
+            exec_env.exec_env = cast (env, wasm_exec_env_t)
+            exec_env_list[str(env)] = exec_env
+            return exec_env
