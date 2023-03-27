@@ -12,27 +12,29 @@ from ctypes import cast
 from ctypes import create_string_buffer
 from ctypes import POINTER
 from ctypes import pointer
-from typing import Any
-from wamr.wamr_api.iwasm import String
+from typing import List, Tuple
+from wamr.wamrapi.iwasm import String
+from wamr.wamrapi.iwasm import Alloc_With_Pool
+from wamr.wamrapi.iwasm import RuntimeInitArgs
+from wamr.wamrapi.iwasm import wasm_exec_env_t
+from wamr.wamrapi.iwasm import wasm_function_inst_t
+from wamr.wamrapi.iwasm import wasm_module_inst_t
+from wamr.wamrapi.iwasm import wasm_module_t
+from wamr.wamrapi.iwasm import wasm_runtime_call_wasm
+from wamr.wamrapi.iwasm import wasm_runtime_create_exec_env
+from wamr.wamrapi.iwasm import wasm_runtime_deinstantiate
+from wamr.wamrapi.iwasm import wasm_runtime_destroy
+from wamr.wamrapi.iwasm import wasm_runtime_destroy_exec_env
+from wamr.wamrapi.iwasm import wasm_runtime_full_init
+from wamr.wamrapi.iwasm import wasm_runtime_instantiate
+from wamr.wamrapi.iwasm import wasm_runtime_load
+from wamr.wamrapi.iwasm import wasm_runtime_lookup_function
+from wamr.wamrapi.iwasm import wasm_runtime_unload
+from wamr.wamrapi.iwasm import wasm_runtime_module_malloc
+from wamr.wamrapi.iwasm import wasm_runtime_module_free
+from wamr.wamrapi.iwasm import wasm_runtime_register_natives
+from wamr.wamrapi.iwasm import NativeSymbol
 
-from wamr.wamr_api.iwasm import Alloc_With_Pool
-from wamr.wamr_api.iwasm import RuntimeInitArgs
-from wamr.wamr_api.iwasm import wasm_exec_env_t
-from wamr.wamr_api.iwasm import wasm_function_inst_t
-from wamr.wamr_api.iwasm import wasm_module_inst_t
-from wamr.wamr_api.iwasm import wasm_module_t
-from wamr.wamr_api.iwasm import wasm_runtime_call_wasm
-from wamr.wamr_api.iwasm import wasm_runtime_create_exec_env
-from wamr.wamr_api.iwasm import wasm_runtime_deinstantiate
-from wamr.wamr_api.iwasm import wasm_runtime_destroy
-from wamr.wamr_api.iwasm import wasm_runtime_destroy_exec_env
-from wamr.wamr_api.iwasm import wasm_runtime_full_init
-from wamr.wamr_api.iwasm import wasm_runtime_instantiate
-from wamr.wamr_api.iwasm import wasm_runtime_load
-from wamr.wamr_api.iwasm import wasm_runtime_lookup_function
-from wamr.wamr_api.iwasm import wasm_runtime_module_malloc
-from wamr.wamr_api.iwasm import wasm_runtime_unload
-from wamr.wamr_api.iwasm import NativeSymbol
 
 class Engine:
     def __init__(self, native_symbols):
@@ -50,12 +52,23 @@ class Engine:
             (c_char * heap_size)(), c_void_p
         )
         init_args.mem_alloc_option.pool.heap_size = heap_size
-
-        init_args.n_native_symbols = len(native_symbols)
-        init_args.native_module_name = String.from_param("env")
-        init_args.native_symbols = cast(native_symbols, POINTER(NativeSymbol))
-
         return init_args
+
+    def register_natives(self, module_name: str, native_symbols: List[NativeSymbol]) -> None:
+        module_name = String.from_param(module_name)
+        # WAMR does not copy the symbols. We must store them.
+        for native in native_symbols:
+            self._native_symbols[str(native.symbol)] = (module_name, native)
+
+        if not wasm_runtime_register_natives(
+            module_name,
+            cast(
+                (NativeSymbol * len(native_symbols))(*native_symbols),
+                POINTER(NativeSymbol)
+            ),
+            len(native_symbols)
+        ):
+            raise Exception("Error while registering symbols")
 
 class Module:
     __create_key = object()
@@ -75,7 +88,7 @@ class Module:
         print("deleting Module")
         wasm_runtime_unload(self.module)
 
-    def _create_module(self, fp: str) -> tuple[wasm_module_t, Array[c_uint]]:
+    def _create_module(self, fp: str) -> Tuple[wasm_module_t, Array[c_uint]]:
         with open(fp, "rb") as f:
             data = f.read()
             data = (c_uint8 * len(data))(*data)
