@@ -15,6 +15,11 @@ from setuptools.command.install import install
 from subprocess import check_call
 
 
+def read_file(file: str) -> str:
+    with open(file) as f:
+        return f.read()
+
+
 def build_library():
     cur_path = pathlib.Path(__file__).parent
     check_call(f"{cur_path}/utils/create_lib.sh".split())
@@ -32,21 +37,40 @@ class PreInstallCommand(install):
         install.run(self)
 
 
+<<<<<<< HEAD
 with open("README.md") as f:
     readme = f.read()
 
 with open("LICENSE") as f:
     license = f.read()
+=======
+class PreEggInfoCommand(egg_info):
+    def run(self):
+        build_library()
+        egg_info.run(self)
+
+>>>>>>> 8b47308a... Improve setup
 
 setup(
     name="wamr-python",
     version="0.1.0",
     description="A WebAssembly runtime powered by WAMR",
+<<<<<<< HEAD
     long_description=readme,
     author="The WAMR Project Developers",
     author_email="hello@bytecodealliance.org",
     url="https://github.com/bytecodealliance/wamr-python",
     license=license,
+=======
+    long_description=read_file("README.md"),
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
+    author="The WAMR Project Developers",
+    author_email="hello@bytecodealliance.org",
+    url="https://github.com/bytecodealliance/wasm-micro-runtime",
+    license=read_file("LICENSE"),
+    python_requires='>=3.8',
+>>>>>>> 8b47308a... Improve setup
     include_package_data=True,
     cmdclass={
         'develop': PreDevelopCommand,
