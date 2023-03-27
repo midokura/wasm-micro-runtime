@@ -134,11 +134,18 @@ class Instance:
             raise Exception("Error while creating module instance")
         return module_inst
 
+_exec_env = None
 
 class ExecEnv:
     def __init__(self, module_inst: Instance):
         self.module_inst = module_inst
+<<<<<<< HEAD:language-bindings/python/src/wamr/wamr_api/wamr.py
         self.exec_env = self._create_exec_env(module_inst)
+=======
+        self.exec_env = self._create_exec_env(module_inst, stack_size)
+        global _exec_env
+        _exec_env = self
+>>>>>>> 6688d615... wip:language-bindings/python/src/wamr/wamrapi/wamr.py
 
     def __del__(self):
         print("deleting ExecEnv")
@@ -166,3 +173,7 @@ class ExecEnv:
         if not exec_env:
             raise Exception("Error while creating execution environment")
         return exec_env
+
+    @staticmethod
+    def wrap(env: int) -> "ExecEnv":
+        return _exec_env
