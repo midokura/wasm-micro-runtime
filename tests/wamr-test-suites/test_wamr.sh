@@ -14,15 +14,9 @@ function help()
 {
     echo "test_wamr.sh [options]"
     echo "-c clean previous test results, not start test"
-<<<<<<< HEAD
-    echo "-s {suite_name} test only one suite (spec)"
-    echo "-m set compile target of iwasm(x86_64\x86_32\armv7_vfp\thumbv7_vfp\riscv64_lp64d\riscv64_lp64)"
-    echo "-t set compile type of iwasm(classic-interp\fast-interp\jit\aot\fast-jit)"
-=======
     echo "-s {suite_name} test only one suite (spec|wasi_certification)"
     echo "-m set compile target of iwasm(x86_64|x86_32|armv7_vfp|thumbv7_vfp|riscv64_lp64d|riscv64_lp64)"
     echo "-t set compile type of iwasm(classic-interp|fast-interp|jit|aot|fast-jit|multi-tier-jit)"
->>>>>>> cfbf29ef... Update cmake files and wamr-test-suites to support collect code coverage (#1992)
     echo "-M enable multi module feature"
     echo "-p enable multi thread feature"
     echo "-S enable SIMD feature"
@@ -36,18 +30,16 @@ function help()
     echo "-P run the spec test parallelly"
     echo "-Q enable qemu"
     echo "-F set the firmware path used by qemu"
-<<<<<<< HEAD
-=======
     echo "-C enable code coverage collect"
->>>>>>> cfbf29ef... Update cmake files and wamr-test-suites to support collect code coverage (#1992)
 }
 
 OPT_PARSED=""
 WABT_BINARY_RELEASE="NO"
 #default type
-TYPE=("classic-interp" "fast-interp" "jit" "aot" "fast-jit")
+TYPE=("classic-interp" "fast-interp" "jit" "aot" "fast-jit" "multi-tier-jit")
 #default target
 TARGET="X86_64"
+ENABLE_WASI_THREADS=0
 ENABLE_MULTI_MODULE=0
 ENABLE_MULTI_THREAD=0
 COLLECT_CODE_COVERAGE=0
@@ -63,16 +55,9 @@ PLATFORM=$(uname -s | tr A-Z a-z)
 PARALLELISM=0
 ENABLE_QEMU=0
 QEMU_FIRMWARE=""
-<<<<<<< HEAD
-=======
 WASI_TESTSUITE_COMMIT="aca78d919355ae00af141e6741a439039615b257"
->>>>>>> 2bae30e8... Add timeout to CI WASI tests and update WASI testsuite commit (#1997)
 
-<<<<<<< HEAD
-while getopts ":s:cabt:m:MCpSXxPQF:" opt
-=======
 while getopts ":s:cabgvt:m:MCpSXxwPGQF:" opt
->>>>>>> cfbf29ef... Update cmake files and wamr-test-suites to support collect code coverage (#1992)
 do
     OPT_PARSED="TRUE"
     case $opt in
@@ -110,7 +95,8 @@ do
         t)
         echo "set compile type of wamr " ${OPTARG}
         if [[ ${OPTARG} != "classic-interp" && ${OPTARG} != "fast-interp" \
-            && ${OPTARG} != "jit" && ${OPTARG} != "aot" && ${OPTARG} != "fast-jit" ]]; then
+            && ${OPTARG} != "jit" && ${OPTARG} != "aot"
+            && ${OPTARG} != "fast-jit" && ${OPTARG} != "multi-tier-jit" ]]; then
             echo "*----- please varify a type of compile when using -t! -----*"
             help
             exit 1
@@ -121,6 +107,10 @@ do
         m)
         echo "set compile target of wamr" ${OPTARG}
         TARGET=${OPTARG^^} # set target to uppercase if input x86_32 or x86_64 --> X86_32 and X86_64
+        ;;
+        w)
+        echo "enable WASI threads"
+        ENABLE_WASI_THREADS=1
         ;;
         M)
         echo "enable multi module feature"
@@ -253,6 +243,13 @@ readonly FAST_JIT_COMPILE_FLAGS="\
     -DWAMR_BUILD_SPEC_TEST=1 \
     -DCOLLECT_CODE_COVERAGE=${COLLECT_CODE_COVERAGE}"
 
+readonly MULTI_TIER_JIT_COMPILE_FLAGS="\
+    -DWAMR_BUILD_TARGET=${TARGET} \
+    -DWAMR_BUILD_INTERP=1 -DWAMR_BUILD_FAST_INTERP=0 \
+    -DWAMR_BUILD_FAST_JIT=1 -DWAMR_BUILD_JIT=1 \
+    -DWAMR_BUILD_SPEC_TEST=1 \
+    -DCOLLECT_CODE_COVERAGE=${COLLECT_CODE_COVERAGE}"
+
 <<<<<<< HEAD
 =======
 readonly MULTI_TIER_JIT_COMPILE_FLAGS="\
@@ -270,6 +267,7 @@ readonly COMPILE_FLAGS=(
         "${ORC_LAZY_JIT_COMPILE_FLAGS}"
         "${AOT_COMPILE_FLAGS}"
         "${FAST_JIT_COMPILE_FLAGS}"
+        "${MULTI_TIER_JIT_COMPILE_FLAGS}"
     )
 
 function unit_test()
@@ -402,16 +400,16 @@ function spec_test()
                     exit 1
                     ;;
             esac
-            if [ ! -f /tmp/wabt-1.0.29-${WABT_PLATFORM}.tar.gz ]; then
+            if [ ! -f /tmp/wabt-1.0.31-${WABT_PLATFORM}.tar.gz ]; then
                 wget \
-                    https://github.com/WebAssembly/wabt/releases/download/1.0.29/wabt-1.0.29-${WABT_PLATFORM}.tar.gz \
+                    https://github.com/WebAssembly/wabt/releases/download/1.0.31/wabt-1.0.31-${WABT_PLATFORM}.tar.gz \
                     -P /tmp
             fi
 
             cd /tmp \
-            && tar zxf wabt-1.0.29-${WABT_PLATFORM}.tar.gz \
+            && tar zxf wabt-1.0.31-${WABT_PLATFORM}.tar.gz \
             && mkdir -p ${WORK_DIR}/wabt/out/gcc/Release/ \
-            && install wabt-1.0.29/bin/wa* ${WORK_DIR}/wabt/out/gcc/Release/ \
+            && install wabt-1.0.31/bin/wa* ${WORK_DIR}/wabt/out/gcc/Release/ \
             && cd -
         fi
     else
@@ -460,6 +458,10 @@ function spec_test()
           echo "fast-jit doesn't support multi-thread feature yet, skip it"
           return
         fi
+        if [[ $1 == 'multi-tier-jit' ]]; then
+          echo "multi-tier-jit doesn't support multi-thread feature yet, skip it"
+          return
+        fi
     fi
 
     if [[ ${ENABLE_XIP} == 1 ]]; then
@@ -467,7 +469,7 @@ function spec_test()
     fi
 
     # set the current running target
-    ARGS_FOR_SPEC_TEST+="-m ${TARGET} " 
+    ARGS_FOR_SPEC_TEST+="-m ${TARGET} "
 
     # require warmc only in aot mode
     if [[ $1 == 'aot' ]]; then
@@ -484,13 +486,19 @@ function spec_test()
 
     if [[ ${ENABLE_QEMU} == 1 ]]; then
         ARGS_FOR_SPEC_TEST+="--qemu "
-        ARGS_FOR_SPEC_TEST+="--qemu-firmware ${QEMU_FIRMWARE}"
+        ARGS_FOR_SPEC_TEST+="--qemu-firmware ${QEMU_FIRMWARE} "
     fi
+
+    # set log directory
+    ARGS_FOR_SPEC_TEST+="--log ${REPORT_DIR}"
 
     cd ${WORK_DIR}
     echo "python3 ./all.py ${ARGS_FOR_SPEC_TEST} | tee -a ${REPORT_DIR}/spec_test_report.txt"
     python3 ./all.py ${ARGS_FOR_SPEC_TEST} | tee -a ${REPORT_DIR}/spec_test_report.txt
-    [[ ${PIPESTATUS[0]} -ne 0 ]] && exit 1
+    if [[ ${PIPESTATUS[0]} -ne 0 ]];then
+        echo -e "\nspec tests FAILED" | tee -a ${REPORT_DIR}/spec_test_report.txt
+        exit 1
+    fi
     cd -
 
     echo -e "\nFinish spec tests" | tee -a ${REPORT_DIR}/spec_test_report.txt
@@ -512,8 +520,6 @@ function wasi_test()
     echo "Finish wasi tests"
 }
 
-<<<<<<< HEAD
-=======
 function wasi_certification_test()
 {
     echo  "Now start wasi certification tests"
@@ -538,7 +544,6 @@ function wasi_certification_test()
     echo -e "\nFinish wasi tests" | tee -a ${REPORT_DIR}/wasi_test_report.txt
 }
 
->>>>>>> cfbf29ef... Update cmake files and wamr-test-suites to support collect code coverage (#1992)
 function polybench_test()
 {
     echo "Now start polybench tests"
@@ -579,19 +584,64 @@ function malformed_test()
     ./malformed_test.py --run ${IWASM_CMD} | tee ${REPORT_DIR}/malfomed_$1_test_report.txt
 }
 
+function collect_standalone()
+{
+    if [[ ${COLLECT_CODE_COVERAGE} == 1 ]]; then
+        pushd ${WORK_DIR} > /dev/null 2>&1
+
+        CODE_COV_FILE=""
+        if [[ -z "${CODE_COV_FILE}" ]]; then
+            CODE_COV_FILE="${WORK_DIR}/wamr.lcov"
+        else
+            CODE_COV_FILE="${CODE_COV_FILE}"
+        fi
+
+        STANDALONE_DIR=${WORK_DIR}/../../standalone
+
+        echo "Collect code coverage of standalone dump-call-stack"
+        ./collect_coverage.sh "${CODE_COV_FILE}" "${STANDALONE_DIR}/dump-call-stack/build"
+        echo "Collect code coverage of standalone dump-mem-profiling"
+        ./collect_coverage.sh "${CODE_COV_FILE}" "${STANDALONE_DIR}/dump-mem-profiling/build"
+        echo "Collect code coverage of standalone dump-perf-profiling"
+        ./collect_coverage.sh "${CODE_COV_FILE}" "${STANDALONE_DIR}/dump-perf-profiling/build"
+        if [[ $1 == "aot" ]]; then
+            echo "Collect code coverage of standalone pad-test"
+            ./collect_coverage.sh "${CODE_COV_FILE}" "${STANDALONE_DIR}/pad-test/build"
+        fi
+        echo "Collect code coverage of standalone test-invoke-native"
+        ./collect_coverage.sh "${CODE_COV_FILE}" "${STANDALONE_DIR}/test-invoke-native/build"
+        echo "Collect code coverage of standalone test-running-modes"
+        ./collect_coverage.sh "${CODE_COV_FILE}" "${STANDALONE_DIR}/test-running-modes/build"
+        echo "Collect code coverage of standalone test-running-modes/c-embed"
+        ./collect_coverage.sh "${CODE_COV_FILE}" "${STANDALONE_DIR}/test-running-modes/c-embed/build"
+        echo "Collect code coverage of standalone test-ts2"
+        ./collect_coverage.sh "${CODE_COV_FILE}" "${STANDALONE_DIR}/test-ts2/build"
+
+        popd > /dev/null 2>&1
+    fi
+}
+
 function standalone_test()
 {
+    if [[ ${COLLECT_CODE_COVERAGE} == 1 ]]; then
+        export COLLECT_CODE_COVERAGE=1
+    fi
+
     cd ${WORK_DIR}/../../standalone
 
     args="--$1"
 
     [[ ${SGX_OPT} == "--sgx" ]] && args="$args --sgx" || args="$args --no-sgx"
 
-    [[ ${ENABLE_MULTI_THREAD} == 1 ]] && args="$args --thread" && args="$args --no-thread"
+    [[ ${ENABLE_MULTI_THREAD} == 1 ]] && args="$args --thread" || args="$args --no-thread"
 
-    [[ ${ENABLE_SIMD} == 1 ]] && args="$args --simd" && args="$args --no-simd"
+    [[ ${ENABLE_SIMD} == 1 ]] && args="$args --simd" || args="$args --no-simd"
+
+    args="$args ${TARGET}"
 
     ./standalone.sh $args | tee ${REPORT_DIR}/standalone_$1_test_report.txt
+
+    collect_standalone "$1"
 }
 
 function build_iwasm_with_cfg()
@@ -653,10 +703,10 @@ function collect_coverage()
         ln -sf ${WORK_DIR}/../spec-test-script/collect_coverage.sh ${WORK_DIR}
 
         CODE_COV_FILE=""
-        if [[ -z "${COV_FILE}" ]]; then
+        if [[ -z "${CODE_COV_FILE}" ]]; then
             CODE_COV_FILE="${WORK_DIR}/wamr.lcov"
         else
-            CODE_COV_FILE="${COV_FILE}"
+            CODE_COV_FILE="${CODE_COV_FILE}"
         fi
 
         pushd ${WORK_DIR} > /dev/null 2>&1
@@ -704,8 +754,6 @@ function trigger()
         EXTRA_COMPILE_FLAGS+=" -DWAMR_BUILD_SIMD=0"
     fi
 
-<<<<<<< HEAD
-=======
     if [[ ${ENABLE_GC} == 1 ]]; then
         EXTRA_COMPILE_FLAGS+=" -DWAMR_BUILD_GC=1"
         EXTRA_COMPILE_FLAGS+=" -DWAMR_BUILD_REF_TYPES=1"
@@ -724,7 +772,6 @@ function trigger()
         EXTRA_COMPILE_FLAGS+=" -DWAMR_BUILD_LIB_WASI_THREADS=1"
     fi
 
->>>>>>> cfbf29ef... Update cmake files and wamr-test-suites to support collect code coverage (#1992)
     for t in "${TYPE[@]}"; do
         case $t in
             "classic-interp")
@@ -802,13 +849,24 @@ function trigger()
 
             "fast-jit")
                 echo "work in fast-jit mode"
-                # jit
+                # fast-jit
                 BUILD_FLAGS="$FAST_JIT_COMPILE_FLAGS $EXTRA_COMPILE_FLAGS"
                 build_iwasm_with_cfg $BUILD_FLAGS
                 for suite in "${TEST_CASE_ARR[@]}"; do
                     $suite"_test" fast-jit
                 done
                 collect_coverage fast-jit
+            ;;
+
+            "multi-tier-jit")
+                echo "work in multi-tier-jit mode"
+                # multi-tier-jit
+                BUILD_FLAGS="$MULTI_TIER_JIT_COMPILE_FLAGS $EXTRA_COMPILE_FLAGS"
+                build_iwasm_with_cfg $BUILD_FLAGS
+                for suite in "${TEST_CASE_ARR[@]}"; do
+                    $suite"_test" multi-tier-jit
+                done
+                collect_coverage multi-tier-jit
             ;;
 
 <<<<<<< HEAD

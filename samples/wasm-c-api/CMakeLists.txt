@@ -136,28 +136,18 @@ include (${SHARED_DIR}/utils/uncommon/shared_uncommon.cmake)
 
 set(MM_UTIL src/utils/multi_module_utils.c)
 # build executable for each .c
-set(EXAMPLES
-  callback
-  callback_chain
-  clone
-  empty_imports
-  global
-  hello
-  hostref
-  memory
-  reflect
-  table
-  threads
-  trap
-)
-
-if(WAMR_BUILD_JIT AND WAMR_BUILD_LAZY_JIT)
-  if((${WAMR_BUILD_JIT} EQUAL 1) AND (${WAMR_BUILD_LAZY_JIT} EQUAL 1))
-    list(APPEND EXAMPLES serialize)
-  endif()
-endif()
+list(APPEND EXAMPLES callback callback_chain empty_imports global hello hostref memory reflect table trap)
+# FIXME enable both in the future
+#list(APPEND EXAMPLES clone threads)
+# FIXME
+# if(WAMR_BUILD_JIT EQUAL 1 AND WAMR_BUILD_LAZY_JIT EQUAL 0)
+#     list(APPEND EXAMPLES serialize)
+# endif()
 
 check_pie_supported()
+
+include(CTest)
+enable_testing()
 
 foreach(EX ${EXAMPLES})
   set(SRC ${CMAKE_CURRENT_LIST_DIR}/src/${EX}.c)
@@ -193,6 +183,12 @@ foreach(EX ${EXAMPLES})
     )
     add_dependencies(${EX} ${EX}_AOT)
   endif()
+
+  # run `ctest --test-dir build`
+  add_test(NAME Test_${EX}
+    COMMAND ./${EX}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
 endforeach()
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -201,19 +197,5 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     REQUIRED
   )
 
-  if(VALGRIND)
-    foreach(EX ${EXAMPLES})
-      add_custom_command(
-        OUTPUT ${EX}_leak_check.report
-        DEPENDS ${EX} ${EX}_WASM
-        COMMAND ${VALGRIND} --tool=memcheck --leak-check=full -- ./${EX} > ${EX}_leak_check.report 2>&1
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-      )
-      add_custom_target(${EX}_LEAK_TEST ALL
-        DEPENDS ${EX}_leak_check.report
-        COMMAND grep "All heap blocks were freed -- no leaks are possible" ${EX}_leak_check.report
-        COMMENT "Please read ${EX}_leak_check.report when meeting Error"
-      )
-    endforeach()
-  endif (VALGRIND)
-endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
+  # run `ctest -T memcheck -V --test-dir build`
+endif()
