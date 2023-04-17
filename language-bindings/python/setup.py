@@ -39,11 +39,11 @@ class PreEggInfoCommand(egg_info):
         egg_info.run(self)
 
 
-class PreEggInfoCommand(egg_info):
-    def run(self):
-        build_library()
-        egg_info.run(self)
+with open("README.md") as f:
+    readme = f.read()
 
+with open("LICENSE") as f:
+    license = f.read()
 
 setup(
     name="wamr-python",
