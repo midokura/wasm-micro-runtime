@@ -150,7 +150,8 @@ _exec_env = None # XXX: hack to keep it for creating new exec_env in case of oth
 class ExecEnv:
     def __init__(self, module_inst: Instance, stack_size: int = 65536):
         self.module_inst = module_inst
-        self.exec_env = self._create_exec_env(module_inst, stack_size)       
+        self.exec_env = self._create_exec_env(module_inst, stack_size)
+        self.own_c = True      
 
         global exec_env_list
         exec_env_list[str(addressof(self.exec_env.contents))] = self
@@ -158,8 +159,9 @@ class ExecEnv:
         _exec_env = self
 
     def __del__(self):
-        print("deleting ExecEnv")
-        #wasm_runtime_destroy_exec_env(self.exec_env)
+        if self.own_c:
+            print("deleting ExecEnv")
+            wasm_runtime_destroy_exec_env(self.exec_env)
 
     def call(self, func: wasm_function_inst_t, argc: int, argv: "POINTER[c_uint]"):
         if not wasm_runtime_call_wasm(self.exec_env, func, argc, argv):
@@ -191,4 +193,5 @@ class ExecEnv:
             exec_env = copy.copy(_exec_env) 
             exec_env.exec_env = cast (env, wasm_exec_env_t)
             exec_env_list[str(env)] = exec_env
+            exec_env.own_c = False
             return exec_env
