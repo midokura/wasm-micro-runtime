@@ -210,8 +210,8 @@ tensorflowlite_init_execution_context(void *tflite_ctx, graph g,
                 NN_ERR_PRINTF("Error when enabling GPU delegate.");
                 use_default = true;
             }
-#elif defined(WASI_NN_ENABLE_EXTERNAL_DELEGATE)
-            NN_WARN_PRINTF("external delegation enabled.");
+#elif defined(WASI_NN_ENABLE_EXTERNAL_DELEGATE)      
+            NN_WARN_PRINTF("external delegation enabled.");      
             auto options = TfLiteExternalDelegateOptionsDefault(
                 WASI_NN_EXT_DELEGATE_PATH);
             auto *delegate = TfLiteExternalDelegateCreate(&options);
@@ -220,7 +220,7 @@ tensorflowlite_init_execution_context(void *tflite_ctx, graph g,
                 != kTfLiteOk) {
                 NN_ERR_PRINTF("Error when enabling External delegate.");
                 use_default = true;
-            }
+            }         
 #else
             NN_WARN_PRINTF("GPU not enabled.");
             use_default = true;
@@ -274,14 +274,48 @@ tensorflowlite_set_input(void *tflite_ctx, graph_execution_context ctx,
         return invalid_argument;
     }
 
-    auto *input =
-        tfl_ctx->interpreters[ctx].interpreter->typed_input_tensor<float>(
-            index);
-    if (input == NULL)
-        return missing_memory;
+    switch (tensor->type) {
+        case kTfLiteFloat32:
+        case kTfLiteFloat16:
+        {
+            auto *input =
+                tfl_ctx->interpreters[ctx].interpreter->typed_input_tensor<float>(
+                    index);
+            if (input == NULL) 
+                return missing_memory;
 
-    bh_memcpy_s(input, model_tensor_size * sizeof(float), input_tensor->data,
-                model_tensor_size * sizeof(float));
+            bh_memcpy_s(input, model_tensor_size * sizeof(float), input_tensor->data,
+                        model_tensor_size * sizeof(float));
+            break;
+        }
+        case kTfLiteInt32:
+        {
+            auto *input = 
+                tfl_ctx->interpreters[ctx].interpreter->typed_input_tensor<int32_t>(
+                    index);
+            if (input == NULL) 
+                return missing_memory;
+            
+            bh_memcpy_s(input, model_tensor_size * sizeof(int32_t), input_tensor->data,
+                        model_tensor_size * sizeof(int32_t));
+            break;
+        }
+        case kTfLiteUInt8:
+        {
+            auto *input =
+                tfl_ctx->interpreters[ctx].interpreter->typed_input_tensor<uint8_t>(
+                    index);
+            if (input == NULL) 
+                return missing_memory;
+
+            bh_memcpy_s(input, model_tensor_size * sizeof(uint8_t), input_tensor->data,
+                        model_tensor_size * sizeof(uint8_t));
+            break;
+        }
+        default:
+            NN_ERR_PRINTF("Strange tensor type");
+            return invalid_argument;
+    }
     return success;
 }
 
