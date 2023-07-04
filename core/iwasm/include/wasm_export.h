@@ -1274,6 +1274,10 @@ wasm_externref_obj2ref(wasm_module_inst_t module_inst,
 WASM_RUNTIME_API_EXTERN bool
 wasm_externref_objdel(wasm_module_inst_t module_inst, void *extern_obj);
 
+WASM_RUNTIME_API_EXTERN bool
+wasm_externref_add_cleanup(wasm_module_inst_t module_inst, void *extern_obj,
+                           void (*fun)(void *));
+
 /**
  * Retrieve the external object from an internal externref index
  *

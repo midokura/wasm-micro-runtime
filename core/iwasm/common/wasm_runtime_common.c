@@ -4636,6 +4636,8 @@ typedef struct ExternRefMapNode {
     bool retained;
     /* Whether it is marked by runtime */
     bool marked;
+    /* cleanup function called when the externref is freed */
+    void (*cleanup)(void *);
 } ExternRefMapNode;
 
 static uint32
@@ -4727,6 +4729,32 @@ wasm_externref_objdel(WASMModuleInstanceCommon *module_inst, void *extern_obj)
         key = (void *)(uintptr_t) lookup_user_data.externref_idx;
         delete_externref(key, lookup_user_data.value);
         ok  = true;
+    }
+    os_mutex_unlock(&externref_lock);
+
+    return ok;
+}
+
+bool
+wasm_externref_add_cleanup(WASMModuleInstanceCommon *module_inst, void *extern_obj,
+                           void (*fun)(void *))
+{
+
+    LookupExtObj_UserData lookup_user_data = { 0 };
+    bool ok = false;
+
+    /* in a wrapper, extern_obj could be any value */
+    lookup_user_data.node.extern_obj = extern_obj;
+    lookup_user_data.node.module_inst = module_inst;
+    lookup_user_data.found = false;
+
+    os_mutex_lock(&externref_lock);
+    /* Lookup hashmap firstly */
+    bh_hash_map_traverse(externref_map, lookup_extobj_callback,
+                         (void *)&lookup_user_data);
+    if (lookup_user_data.found) {
+        lookup_user_data.value->cleanup = fun;
+        ok = true;
     }
     os_mutex_unlock(&externref_lock);
 
@@ -4832,8 +4860,7 @@ reclaim_extobj_callback(void *key, void *value, void *user_data)
 
     if (node->module_inst == module_inst) {
         if (!node->marked && !node->retained) {
-            bh_hash_map_remove(externref_map, key, NULL, NULL);
-            wasm_runtime_free(value);
+            delete_externref(key, value);
         }
         else {
             node->marked = false;
@@ -4948,8 +4975,7 @@ cleanup_extobj_callback(void *key, void *value, void *user_data)
         (WASMModuleInstanceCommon *)user_data;
 
     if (node->module_inst == module_inst) {
-        bh_hash_map_remove(externref_map, key, NULL, NULL);
-        wasm_runtime_free(value);
+        delete_externref(key, value);
     }
 }
 
