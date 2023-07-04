@@ -1271,6 +1271,9 @@ WASM_RUNTIME_API_EXTERN bool
 wasm_externref_obj2ref(wasm_module_inst_t module_inst,
                        void *extern_obj, uint32_t *p_externref_idx);
 
+WASM_RUNTIME_API_EXTERN bool
+wasm_externref_objdel(wasm_module_inst_t module_inst, void *extern_obj);
+
 /**
  * Retrieve the external object from an internal externref index
  *
