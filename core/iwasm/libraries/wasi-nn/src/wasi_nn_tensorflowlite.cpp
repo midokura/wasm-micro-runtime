@@ -319,8 +319,6 @@ tensorflowlite_set_input(void *tflite_ctx, graph_execution_context ctx,
         float *input_tensor_f = (float *)input_tensor->data;
         for (uint32_t i = 0; i < model_tensor_size; ++i) {
             it[i] = (uint8_t)(input_tensor_f[i] / scale + zero_point);
-            NN_DBG_PRINTF("input tensor: (pre, post) = (%f %d)",
-                          input_tensor_f[i], it[i]);
         }
     }
 
