@@ -1,0 +1,32 @@
+# Copyright (C) 2019 Intel Corporation.  All rights reserved.
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
+FROM ubuntu:20.04 AS base
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    cmake build-essential git
+
+RUN apt-get update && apt-get install -y curl gnupg
+
+RUN echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | tee /etc/apt/sources.list.d/coral-edgetpu.list && \
+    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
+    apt-get update && apt-get install -y libedgetpu1-std
+
+
+WORKDIR /home/wamr
+
+COPY . .
+
+WORKDIR /home/wamr/core/iwasm/libraries/wasi-nn/test/build
+
+RUN cmake \
+  -DWAMR_BUILD_WASI_NN=1 \
+  -DWASI_NN_ENABLE_TPU=1 \
+  -DWASI_NN_ENABLE_GPU=1 \
+  ..
+
+RUN make -j $(grep -c ^processor /proc/cpuinfo)
+
+ENTRYPOINT [ "/home/wamr/core/iwasm/libraries/wasi-nn/test/build/iwasm" ]

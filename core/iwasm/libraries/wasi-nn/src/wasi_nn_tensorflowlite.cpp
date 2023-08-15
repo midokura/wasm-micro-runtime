@@ -21,6 +21,19 @@
 #include <tensorflow/lite/delegates/gpu/delegate.h>
 #endif
 
+#if defined(WASI_NN_ENABLE_TPU)
+#include <tensorflow/lite/delegates/external/external_delegate.h>
+#if defined(BH_PLATFORM_LINUX)
+#define TPU_DELEGATE "libedgetpu.so.1"
+#elif defined(BH_PLATFORM_WINDOWS)
+#define TPU_DELEGATE "edgetpu.dll"
+#elif defined(BH_PLATFORM_DARWIN)
+#define TPU_DELEGATE "libedgetpu.1.dylib"
+#else
+#error
+#endif
+#endif
+
 /* Maximum number of graphs per WASM instance */
 #define MAX_GRAPHS_PER_INST 10
 /* Maximum number of graph execution context per WASM instance*/
@@ -126,8 +139,8 @@ tensorflowlite_load(void *tflite_ctx, graph_builder_array *builder,
         return invalid_argument;
     }
 
-    if (target != cpu && target != gpu) {
-        NN_ERR_PRINTF("Only CPU and GPU target is supported.");
+    if (target != cpu && target != gpu && target != tpu) {
+        NN_ERR_PRINTF("Only CPU, GPU and TPU target is supported.");
         return invalid_argument;
     }
 
@@ -212,12 +225,31 @@ tensorflowlite_init_execution_context(void *tflite_ctx, graph g,
 #endif
             break;
         }
+        case tpu:
+        {
+#if defined(WASI_NN_ENABLE_TPU)
+            NN_WARN_PRINTF("TPU enabled.");
+            auto options = TfLiteExternalDelegateOptionsDefault(TPU_DELEGATE);
+            auto *delegate = TfLiteExternalDelegateCreate(&options);
+            if (tfl_ctx->interpreters[*ctx]
+                    .interpreter->ModifyGraphWithDelegate(delegate)
+                != kTfLiteOk) {
+                NN_ERR_PRINTF("Error when enabling TPU delegate.");
+                use_default = true;
+            }
+#else
+            NN_WARN_PRINTF("TPU not enabled.");
+            use_default = true;
+#endif
+            break;
+        }
         default:
             use_default = true;
     }
     if (use_default)
         NN_WARN_PRINTF("Default encoding is CPU.");
 
+    NN_WARN_PRINTF("Allocating tensors.");
     tfl_ctx->interpreters[*ctx].interpreter->AllocateTensors();
     return success;
 }
@@ -259,14 +291,39 @@ tensorflowlite_set_input(void *tflite_ctx, graph_execution_context ctx,
         return invalid_argument;
     }
 
-    auto *input =
-        tfl_ctx->interpreters[ctx].interpreter->typed_input_tensor<float>(
-            index);
-    if (input == NULL)
-        return missing_memory;
+    if (tensor->quantization.type == kTfLiteNoQuantization) {
+        NN_DBG_PRINTF("No quantization information. Using float as default");
+        float *it =
+            tfl_ctx->interpreters[ctx].interpreter->typed_input_tensor<float>(
+                index);
 
-    bh_memcpy_s(input, model_tensor_size * sizeof(float), input_tensor->data,
-                model_tensor_size * sizeof(float));
+        int size = model_tensor_size * sizeof(float);
+        bh_memcpy_s(it, size, input_tensor->data, size);
+    }
+    else { // TODO: Select with template. Assumming uint8.
+        TfLiteAffineQuantization *quant_info =
+            (TfLiteAffineQuantization *)tensor->quantization.params;
+        if (quant_info->scale->size != 1 || quant_info->zero_point->size != 1) {
+            NN_ERR_PRINTF("Quantization per channel is not supported");
+            return runtime_error;
+        }
+        uint8_t *it =
+            tfl_ctx->interpreters[ctx].interpreter->typed_input_tensor<uint8_t>(
+                index);
+
+        float scale = quant_info->scale->data[0];
+        float zero_point = (float)quant_info->zero_point->data[0];
+        NN_DBG_PRINTF("input tensor: (scale, offset) = (%f, %f)", scale,
+                      zero_point);
+
+        float *input_tensor_f = (float *)input_tensor->data;
+        for (uint32_t i = 0; i < model_tensor_size; ++i) {
+            it[i] = (uint8_t)(input_tensor_f[i] / scale + zero_point);
+            NN_DBG_PRINTF("input tensor: (pre, post) = (%f %d)",
+                          input_tensor_f[i], it[i]);
+        }
+    }
+
     return success;
 }
 
@@ -299,6 +356,7 @@ tensorflowlite_get_output(void *tflite_ctx, graph_execution_context ctx,
     NN_DBG_PRINTF("Number of tensors (%d)", num_output_tensors);
 
     if (index + 1 > num_output_tensors) {
+        NN_ERR_PRINTF("Index %d is invalid.", index);
         return runtime_error;
     }
 
@@ -317,15 +375,37 @@ tensorflowlite_get_output(void *tflite_ctx, graph_execution_context ctx,
         return missing_memory;
     }
 
-    float *tensor_f =
-        tfl_ctx->interpreters[ctx].interpreter->typed_output_tensor<float>(
-            index);
-    for (uint32_t i = 0; i < model_tensor_size; ++i)
-        NN_DBG_PRINTF("output: %f", tensor_f[i]);
+    if (tensor->quantization.type == kTfLiteNoQuantization) {
+        NN_DBG_PRINTF("No quantization information");
+        float *ot =
+            tfl_ctx->interpreters[ctx].interpreter->typed_output_tensor<float>(
+                index);
+
+        int size = model_tensor_size * sizeof(float);
+        bh_memcpy_s(output_tensor, size, ot, size);
+    }
+    else { // TODO: Select with template. Assumming uint8.
+        TfLiteAffineQuantization *quant_info =
+            (TfLiteAffineQuantization *)tensor->quantization.params;
+        if (quant_info->scale->size != 1 || quant_info->zero_point->size != 1) {
+            NN_ERR_PRINTF("Quantization per channel is not supported");
+            return runtime_error;
+        }
+        uint8_t *ot = tfl_ctx->interpreters[ctx]
+                          .interpreter->typed_output_tensor<uint8_t>(index);
+
+        float scale = quant_info->scale->data[0];
+        float zero_point = (float)quant_info->zero_point->data[0];
+        NN_DBG_PRINTF("output tensor: (scale, offset) = (%f, %f)", scale,
+                      zero_point);
+
+        float *output_tensor_f = (float *)output_tensor;
+        for (uint32_t i = 0; i < model_tensor_size; ++i) {
+            output_tensor_f[i] = (ot[i] - zero_point) * scale;
+        }
+    }
 
     *output_tensor_size = model_tensor_size;
-    bh_memcpy_s(output_tensor, model_tensor_size * sizeof(float), tensor_f,
-                model_tensor_size * sizeof(float));
     return success;
 }
 

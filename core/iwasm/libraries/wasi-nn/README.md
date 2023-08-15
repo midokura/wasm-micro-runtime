@@ -24,6 +24,7 @@ Build the runtime image for your execution target type.
 `EXECUTION_TYPE` can be:
 * `cpu`
 * `nvidia-gpu`
+* `tpu`
 
 ```
 EXECUTION_TYPE=cpu
@@ -73,6 +74,20 @@ docker run \
 
 Requirements:
 * [NVIDIA docker](https://github.com/NVIDIA/nvidia-docker).
+
+* (Coral) TPU
+
+```
+docker run \
+    --privileged \
+    --device=/dev/bus/usb:/dev/bus/usb \
+    -v $PWD/core/iwasm/libraries/wasi-nn/test:/assets wasi-nn-tpu \
+    --dir=/assets \
+    /assets/test_tensorflow_tpu.wasm
+```
+
+Requirements:
+* [Coral USB](https://coral.ai/products/accelerator/).
 
 ## What is missing
 

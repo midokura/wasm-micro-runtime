@@ -96,6 +96,9 @@ cmake -DWAMR_BUILD_PLATFORM=linux -DWAMR_BUILD_TARGET=ARM
 #### **Enable lib wasi-nn GPU mode**
 - **WASI_NN_ENABLE_GPU**=1/0, default to disable if not set
 
+#### **Enable lib wasi-nn TPU mode**
+- **WASI_NN_ENABLE_TPU**=1/0, default to disable if not set
+
 #### **Disable boundary check with hardware trap**
 - **WAMR_DISABLE_HW_BOUND_CHECK**=1/0, default to enable if not set and supported by platform
 > Note: by default only platform linux/darwin/android/windows/vxworks 64-bit will enable the boundary check with hardware trap feature, and the wamrc tool will generate AOT code without boundary check instructions in all 64-bit targets except SGX to improve performance. The boundary check includes linear memory access boundary and native stack access boundary, if `WAMR_DISABLE_STACK_HW_BOUND_CHECK` below isn't set.
