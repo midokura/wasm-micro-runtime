@@ -364,6 +364,9 @@ set_input(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
         preprocess_and_resize_tensor(tensor, input_tensor,
                                      &input_tensor_scaled_data);
         input_tensor_data = input_tensor_scaled_data;
+        for (uint32_t i = 0; i < input_tensor->dimensions->size; i++) {
+           input_tensor->dimensions->buf[i] = tensor->dims->data[i];
+        }
     }
     else {
         input_tensor_data = input_tensor->data;
@@ -394,9 +397,10 @@ set_input(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
         NN_DBG_PRINTF("input tensor: (scale, offset) = (%f, %f)", scale,
                       zero_point);
 
-        float *input_tensor_f = (float *)input_tensor_data;
+        float inv_scale = 1.0f / scale;
+        uint8_t *input_data = (uint8_t *)input_tensor_data;
         for (uint32_t i = 0; i < model_tensor_size; ++i) {
-            it[i] = (uint8_t)(input_tensor_f[i] / scale + zero_point);
+           it[i] = (uint8_t)(input_data[i] * inv_scale + zero_point);
         }
     }
     if (input_tensor_scaled_data != NULL) {
