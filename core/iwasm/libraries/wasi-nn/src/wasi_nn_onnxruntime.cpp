@@ -10,6 +10,7 @@
 #include <vector>
 #include <unordered_map>
 #include <opencv2/opencv.hpp>
+#include "bh_platform.h"
 #include "wasi_nn_private.h"
 #include "wasi_nn.h"
 #include "utils/logger.h"
@@ -560,8 +561,8 @@ set_input(void *onnx_ctx, graph_execution_context ctx, uint32_t index, tensor *i
     OnnxRuntimeExecCtx *exec_ctx = &g_exec_ctxs[ctx];
 
     OrtTypeInfo *type_info = nullptr;
-    OrtStatus *status = ort_ctx->ort_api->SessionGetInputTypeInfo(
-        exec_ctx->session, index, &type_info);
+    OrtStatus* status = ort_ctx->ort_api->SessionGetInputTypeInfo(
+    exec_ctx->graph->session, index, &type_info);
     if (status != nullptr) {
         ort_ctx->ort_api->ReleaseTypeInfo(type_info);
         return runtime_error;
@@ -617,7 +618,7 @@ set_input(void *onnx_ctx, graph_execution_context ctx, uint32_t index, tensor *i
         total_elements *= input_tensor->dimensions->buf[i];
     }
 
-    OrtStatus *status = ort_ctx->ort_api->CreateTensorWithDataAsOrtValue(
+    status = ort_ctx->ort_api->CreateTensorWithDataAsOrtValue(
         exec_ctx->memory_info, input_tensor->data,
         get_tensor_element_size(input_tensor->type) * total_elements,
         ort_dims, num_dims, ort_type, &input_value);

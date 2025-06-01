@@ -25,7 +25,6 @@ if(WAMR_BUILD_WASI_NN_TFLITE EQUAL 1)
   enable_language(CXX)
 find_package(OpenCV REQUIRED)
 
-# 确保 OpenCV 被找到
 if(NOT OpenCV_FOUND)
   message(FATAL_ERROR "OpenCV not found!")
 else()
@@ -126,6 +125,13 @@ if(WAMR_BUILD_WASI_NN_ONNXRUNTIME EQUAL 1)
   find_package(onnxruntime REQUIRED)
   enable_language(CXX)
 
+  find_package(OpenCV REQUIRED)
+  if(NOT OpenCV_FOUND)
+    message(FATAL_ERROR "OpenCV not found!")
+  else()
+    message(STATUS "OpenCV found: ${OpenCV_VERSION}")
+  endif()
+
   add_library(
     wasi_nn_onnxruntime
     SHARED
@@ -135,7 +141,9 @@ if(WAMR_BUILD_WASI_NN_ONNXRUNTIME EQUAL 1)
   target_include_directories(
     wasi_nn_onnxruntime
     PUBLIC
+      ${onnxruntime_INCLUDE_DIRS}/onnxruntime
       ${onnxruntime_INCLUDE_DIRS}
+      ${OpenCV_INCLUDE_DIRS}
   )
 
   target_link_libraries(
@@ -143,6 +151,7 @@ if(WAMR_BUILD_WASI_NN_ONNXRUNTIME EQUAL 1)
     PUBLIC
       vmlib
       onnxruntime
+      ${OpenCV_LIBS}
   )
 
   install(TARGETS wasi_nn_onnxruntime DESTINATION lib)
