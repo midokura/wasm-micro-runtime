@@ -9,7 +9,7 @@
 #include "bh_platform.h"
 #include "wasi_nn_types.h"
 #include "wasm_export.h"
-
+#include <opencv2/opencv.hpp>
 #include <tensorflow/lite/interpreter.h>
 #include <tensorflow/lite/kernels/register.h>
 #include <tensorflow/lite/model.h>
@@ -85,12 +85,8 @@ is_valid_graph(TFLiteContext *tfl_ctx, graph g)
         NN_ERR_PRINTF("Invalid graph: %d >= %d.", g, MAX_GRAPHS_PER_INST);
         return runtime_error;
     }
-    if (tfl_ctx->models[g].model_pointer == NULL) {
-        NN_ERR_PRINTF("Context (model) non-initialized.");
-        return runtime_error;
-    }
     if (tfl_ctx->models[g].model == NULL) {
-        NN_ERR_PRINTF("Context (tflite model) non-initialized.");
+        NN_ERR_PRINTF("Context (model) non-initialized.");
         return runtime_error;
     }
     return success;
@@ -109,6 +105,51 @@ is_valid_graph_execution_context(TFLiteContext *tfl_ctx,
         NN_ERR_PRINTF("Context (interpreter) non-initialized.");
         return runtime_error;
     }
+    return success;
+}
+
+static wasi_nn_error
+preprocess_and_resize_tensor(TfLiteTensor *input_tensor_tf,
+                             tensor *input_tensor, void **output_data)
+{
+    if (input_tensor_tf->dims->size != input_tensor->dimensions->size) {
+        NN_ERR_PRINTF("Input tensor dimensions mismatch.");
+        return invalid_argument;
+    }
+    uint32_t tf_h = input_tensor_tf->dims->data[1];
+    uint32_t tf_w = input_tensor_tf->dims->data[2];
+    uint32_t img_h = input_tensor->dimensions->buf[1];
+    uint32_t img_w = input_tensor->dimensions->buf[2];
+    if (tf_h == 0 || tf_w == 0 || img_h == 0 || img_w == 0) {
+        NN_ERR_PRINTF("Invalid tensor dimensions.");
+        return invalid_argument;
+    }
+    cv::Mat resized_mat;
+    switch (input_tensor->type) {
+        case fp32:
+        {
+            cv::Mat input_mat(img_h, img_w, CV_32FC3, input_tensor->data);
+            cv::resize(input_mat, resized_mat, cv::Size(tf_w, tf_h));
+            break;
+        }
+        case up8:
+        {
+            cv::Mat input_mat(img_h, img_w, CV_8UC3, input_tensor->data);
+            cv::resize(input_mat, resized_mat, cv::Size(tf_w, tf_h));
+            break;
+        }
+        default:
+            NN_ERR_PRINTF("Unsupported tensor type for preprocessing.");
+            return invalid_argument;
+    }
+    size_t data_length = resized_mat.total() * resized_mat.elemSize();
+    *output_data = malloc(data_length);
+    if (output_data == NULL) {
+        NN_ERR_PRINTF("Error when allocating memory for resized tensor.");
+        return too_large;
+    }
+    bh_memcpy_s(*output_data, data_length, resized_mat.data, data_length);
+    // printf("First value in resized_mat: %f\n", *((float*)resized_mat.data));
     return success;
 }
 
@@ -303,17 +344,32 @@ set_input(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
     }
 
     uint32_t model_tensor_size = 1;
-    for (int i = 0; i < tensor->dims->size; ++i)
+    for (int i = 0; i < tensor->dims->size; ++i) {
         model_tensor_size *= (uint32_t)tensor->dims->data[i];
+        NN_INFO_PRINTF("Tensor dimension %d: %d", i, tensor->dims->data[i]);
+    }
 
     uint32_t input_tensor_size = 1;
-    for (uint32_t i = 0; i < input_tensor->dimensions->size; i++)
+    for (uint32_t i = 0; i < input_tensor->dimensions->size; i++) {
         input_tensor_size *= (uint32_t)input_tensor->dimensions->buf[i];
-
+        NN_INFO_PRINTF("Input tensor dimension %d: %d", i,
+                       input_tensor->dimensions->buf[i]);
+    }
+    void *input_tensor_data = NULL;
+    void *input_tensor_scaled_data = NULL;
     if (model_tensor_size != input_tensor_size) {
-        NN_ERR_PRINTF("Input tensor shape from the model is different than the "
-                      "one provided");
-        return invalid_argument;
+        NN_INFO_PRINTF(
+            "Input tensor shape from the model is different than the "
+            "one provided\n");
+        preprocess_and_resize_tensor(tensor, input_tensor,
+                                     &input_tensor_scaled_data);
+        input_tensor_data = input_tensor_scaled_data;
+        for (uint32_t i = 0; i < input_tensor->dimensions->size; i++) {
+           input_tensor->dimensions->buf[i] = tensor->dims->data[i];
+        }
+    }
+    else {
+        input_tensor_data = input_tensor->data;
     }
 
     if (tensor->quantization.type == kTfLiteNoQuantization) {
@@ -323,7 +379,7 @@ set_input(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
                 index);
 
         int size = model_tensor_size * sizeof(float);
-        bh_memcpy_s(it, size, input_tensor->data, size);
+        bh_memcpy_s(it, size, input_tensor_data, size);
     }
     else { // TODO: Assuming uint8 quantized networks.
         TfLiteAffineQuantization *quant_info =
@@ -341,12 +397,16 @@ set_input(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
         NN_DBG_PRINTF("input tensor: (scale, offset) = (%f, %f)", scale,
                       zero_point);
 
-        float *input_tensor_f = (float *)input_tensor->data;
+        float inv_scale = 1.0f / scale;
+        uint8_t *input_data = (uint8_t *)input_tensor_data;
         for (uint32_t i = 0; i < model_tensor_size; ++i) {
-            it[i] = (uint8_t)(input_tensor_f[i] / scale + zero_point);
+           it[i] = (uint8_t)(input_data[i] * inv_scale + zero_point);
         }
     }
-
+    if (input_tensor_scaled_data != NULL) {
+        free(input_tensor_scaled_data);
+        input_tensor_scaled_data = NULL;
+    }
     return success;
 }
 
@@ -472,32 +532,31 @@ deinit_backend(void *tflite_ctx)
     NN_DBG_PRINTF("Freeing memory.");
     for (int i = 0; i < MAX_GRAPHS_PER_INST; ++i) {
         tfl_ctx->models[i].model.reset();
-        if (tfl_ctx->models[i].model_pointer) {
-            if (tfl_ctx->delegate) {
-                switch (tfl_ctx->models[i].target) {
-                    case gpu:
-                    {
+        if (tfl_ctx->delegate) {
+            switch (tfl_ctx->models[i].target) {
+                case gpu:
+                {
 #if WASM_ENABLE_WASI_NN_GPU != 0
-                        TfLiteGpuDelegateV2Delete(tfl_ctx->delegate);
+                    TfLiteGpuDelegateV2Delete(tfl_ctx->delegate);
 #else
-                        NN_ERR_PRINTF("GPU delegate delete but not enabled.");
+                    NN_ERR_PRINTF("GPU delegate delete but not enabled.");
 #endif
-                        break;
-                    }
-                    case tpu:
-                    {
-#if WASM_ENABLE_WASI_NN_EXTERNAL_DELEGATE != 0
-                        TfLiteExternalDelegateDelete(tfl_ctx->delegate);
-#else
-                        NN_ERR_PRINTF(
-                            "External delegate delete but not enabled.");
-#endif
-                        break;
-                    }
-                    default:
-                        break;
+                    break;
                 }
+                case tpu:
+                {
+#if WASM_ENABLE_WASI_NN_EXTERNAL_DELEGATE != 0
+                    TfLiteExternalDelegateDelete(tfl_ctx->delegate);
+#else
+                    NN_ERR_PRINTF("External delegate delete but not enabled.");
+#endif
+                    break;
+                }
+                default:
+                    break;
             }
+        }
+        if (tfl_ctx->models[i].model_pointer) {
             wasm_runtime_free(tfl_ctx->models[i].model_pointer);
         }
         tfl_ctx->models[i].model_pointer = NULL;

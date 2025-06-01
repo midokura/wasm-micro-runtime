@@ -23,6 +23,14 @@ add_compile_definitions(
 if(WAMR_BUILD_WASI_NN_TFLITE EQUAL 1)
   find_package(tensorflow_lite REQUIRED)
   enable_language(CXX)
+find_package(OpenCV REQUIRED)
+
+# 确保 OpenCV 被找到
+if(NOT OpenCV_FOUND)
+  message(FATAL_ERROR "OpenCV not found!")
+else()
+  message(STATUS "OpenCV found: ${OpenCV_VERSION}")
+endif()
 
   add_library(
     wasi_nn_tflite
@@ -34,6 +42,7 @@ if(WAMR_BUILD_WASI_NN_TFLITE EQUAL 1)
     wasi_nn_tflite
     PUBLIC
       ${tensorflow_lite_SOURCE_DIR}
+      ${OpenCV_INCLUDE_DIRS}
   )
 
   target_link_libraries(
@@ -41,6 +50,8 @@ if(WAMR_BUILD_WASI_NN_TFLITE EQUAL 1)
     PUBLIC
       vmlib
       tensorflow-lite
+      ${OpenCV_LIBS}
+
   )
 
   install(TARGETS wasi_nn_tflite DESTINATION lib)
