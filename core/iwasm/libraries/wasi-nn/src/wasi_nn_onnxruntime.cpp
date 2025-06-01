@@ -9,7 +9,7 @@
 #include <mutex>
 #include <vector>
 #include <unordered_map>
-
+#include <opencv2/opencv.hpp>
 #include "wasi_nn_private.h"
 #include "wasi_nn.h"
 #include "utils/logger.h"
@@ -190,6 +190,51 @@ get_tensor_element_size(tensor_type type)
     }
 }
 
+static wasi_nn_error
+preprocess_and_resize_tensor_onnx(int64_t *model_dims, tensor *input_tensor,
+                                  void **output_data)
+{
+
+    uint32_t onnx_h = model_dims[1];
+    uint32_t onnx_w = model_dims[2];
+    uint32_t img_h = input_tensor->dimensions->buf[1];
+    uint32_t img_w = input_tensor->dimensions->buf[2];
+
+    if (onnx_h == 0 || onnx_w == 0 || img_h == 0 || img_w == 0) {
+        NN_ERR_PRINTF("Invalid tensor dimensions.");
+        return invalid_argument;
+    }
+
+    cv::Mat resized_mat;
+    switch (input_tensor->type) {
+        case fp32:
+        {
+            cv::Mat input_mat(img_h, img_w, CV_32FC3, input_tensor->data);
+            cv::resize(input_mat, resized_mat, cv::Size(onnx_w, onnx_h));
+            break;
+        }
+        case up8:
+        {
+            cv::Mat input_mat(img_h, img_w, CV_8UC3, input_tensor->data);
+            cv::resize(input_mat, resized_mat, cv::Size(onnx_w, onnx_h));
+            break;
+        }
+        default:
+            NN_ERR_PRINTF("Unsupported tensor type for preprocessing.");
+            return invalid_argument;
+    }
+
+    size_t data_length = resized_mat.total() * resized_mat.elemSize();
+    *output_data = malloc(data_length);
+    if (*output_data == NULL) {
+        NN_ERR_PRINTF("Error when allocating memory for resized tensor.");
+        return too_large;
+    }
+
+    bh_memcpy_s(*output_data, data_length, resized_mat.data, data_length);
+    return success;
+}
+
 /* Backend API implementation */
 
 extern "C" {
@@ -251,7 +296,7 @@ init_backend(void **onnx_ctx)
         g_graphs[i].is_initialized = false;
         g_graphs[i].session = nullptr;
     }
-    
+
     for (int i = 0; i < MAX_CONTEXTS; i++) {
         g_exec_ctxs[i].is_initialized = false;
         g_exec_ctxs[i].memory_info = nullptr;
@@ -355,7 +400,7 @@ load(void *onnx_ctx, graph_builder_array *builder, graph_encoding encoding,
     OrtStatus *status = ctx->ort_api->CreateSessionFromArray(
         ctx->env, builder->buf[0].buf, builder->buf[0].size,
         ctx->session_options, &g_graphs[graph_index].session);
-    
+
     if (status != nullptr) {
         const char* error_message = ctx->ort_api->GetErrorMessage(status);
         wasi_nn_error err = convert_ort_error_to_wasi_nn_error(status);
@@ -363,7 +408,7 @@ load(void *onnx_ctx, graph_builder_array *builder, graph_encoding encoding,
         ctx->ort_api->ReleaseStatus(status);
         return err;
     }
-    
+
     NN_INFO_PRINTF("ONNX Runtime session created successfully");
 
     g_graphs[graph_index].is_initialized = true;
@@ -374,7 +419,7 @@ load(void *onnx_ctx, graph_builder_array *builder, graph_encoding encoding,
 }
 
 __attribute__((visibility("default"))) wasi_nn_error
-load_by_name(void *onnx_ctx, const char *name, graph *g)
+load_by_name(void *onnx_ctx, const char *name, uint32_t filename_len, graph *g)
 {
     OnnxRuntimeContext *ctx = (OnnxRuntimeContext *)onnx_ctx;
     std::lock_guard<std::mutex> lock(ctx->mutex);
@@ -514,6 +559,45 @@ set_input(void *onnx_ctx, graph_execution_context ctx, uint32_t index, tensor *i
     std::lock_guard<std::mutex> lock(ort_ctx->mutex);
     OnnxRuntimeExecCtx *exec_ctx = &g_exec_ctxs[ctx];
 
+    OrtTypeInfo *type_info = nullptr;
+    OrtStatus *status = ort_ctx->ort_api->SessionGetInputTypeInfo(
+        exec_ctx->session, index, &type_info);
+    if (status != nullptr) {
+        ort_ctx->ort_api->ReleaseTypeInfo(type_info);
+        return runtime_error;
+    }
+
+    const OrtTensorTypeAndShapeInfo *tensor_info;
+    ort_ctx->ort_api->CastTypeInfoToTensorInfo(type_info, &tensor_info);
+
+    size_t num_model_dims;
+    status = ort_ctx->ort_api->GetDimensionsCount(tensor_info, &num_model_dims);
+    std::vector<int64_t> model_dims(num_model_dims);
+    status = ort_ctx->ort_api->GetDimensions(tensor_info, model_dims.data(),
+                                             num_model_dims);
+
+    size_t model_tensor_size = 1;
+    for (size_t i = 0; i < num_model_dims; ++i)
+        model_tensor_size *= model_dims[i];
+
+    size_t input_tensor_size = 1;
+    for (size_t i = 0; i < input_tensor->dimensions->size; ++i)
+        input_tensor_size *= input_tensor->dimensions->buf[i];
+
+    void *input_tensor_data = input_tensor->data;
+    void *input_tensor_scaled_data = NULL;
+    if (model_tensor_size != input_tensor_size) {
+        NN_INFO_PRINTF("Resizing input tensor to match model shape.");
+        preprocess_and_resize_tensor_onnx(model_dims.data(), input_tensor,
+                                          &input_tensor_scaled_data);
+        input_tensor_data = input_tensor_scaled_data;
+        // Refresh the information
+        for (size_t i = 0; i < num_model_dims; ++i)
+            input_tensor->dimensions->buf[i] = model_dims[i];
+    }
+
+    ort_ctx->ort_api->ReleaseTypeInfo(type_info);
+
     size_t num_dims = input_tensor->dimensions->size;
     int64_t *ort_dims = (int64_t *)malloc(num_dims * sizeof(int64_t));
     if (!ort_dims) {
@@ -532,7 +616,7 @@ set_input(void *onnx_ctx, graph_execution_context ctx, uint32_t index, tensor *i
     for (size_t i = 0; i < num_dims; i++) {
         total_elements *= input_tensor->dimensions->buf[i];
     }
-    
+
     OrtStatus *status = ort_ctx->ort_api->CreateTensorWithDataAsOrtValue(
         exec_ctx->memory_info, input_tensor->data,
         get_tensor_element_size(input_tensor->type) * total_elements,
@@ -585,12 +669,12 @@ compute(void *onnx_ctx, graph_execution_context ctx)
     exec_ctx->outputs.clear();
 
     std::vector<OrtValue*> output_values(exec_ctx->output_names.size());
-    
+
     OrtStatus *status = ort_ctx->ort_api->Run(
         exec_ctx->graph->session, nullptr,
         input_names.data(), input_values.data(), input_values.size(),
         exec_ctx->output_names.data(), exec_ctx->output_names.size(), output_values.data());
-        
+
     for (size_t i = 0; i < output_values.size(); i++) {
         exec_ctx->outputs[i] = output_values[i];
     }
@@ -701,7 +785,7 @@ get_output(void *onnx_ctx, graph_execution_context ctx, uint32_t index, tensor_d
         NN_ERR_PRINTF("Failed to get tensor data");
         return err;
     }
-    
+
     if (tensor_data == nullptr) {
         NN_ERR_PRINTF("Tensor data pointer is null");
         return runtime_error;
@@ -735,11 +819,11 @@ get_output(void *onnx_ctx, graph_execution_context ctx, uint32_t index, tensor_d
     size_t output_size_bytes = tensor_size * element_size;
 
     NN_INFO_PRINTF("Output tensor size: %zu elements, element size: %zu bytes, total: %zu bytes", 
-                  tensor_size, element_size, output_size_bytes);
+                   tensor_size, element_size, output_size_bytes);
 
     if (*out_buffer_size < output_size_bytes) {
         NN_ERR_PRINTF("Output buffer too small: %u bytes provided, %zu bytes needed", 
-                     *out_buffer_size, output_size_bytes);
+            *out_buffer_size, output_size_bytes);
         *out_buffer_size = output_size_bytes;
         return invalid_argument;
     }
