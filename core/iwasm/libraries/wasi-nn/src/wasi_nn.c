@@ -27,6 +27,14 @@
 #define ONNXRUNTIME_BACKEND_LIB "libwasi_nn_onnxruntime.so"
 
 /* Global variables */
+static korp_mutex wasi_nn_lock;
+/*
+ * the "lookup" table is protected by wasi_nn_lock.
+ *
+ * an exception: during wasm_runtime_destroy, wasi_nn_destroy tears down
+ * the table without acquiring the lock. it's ok because there should be
+ * no other threads using the runtime at this point.
+ */
 struct backends_api_functions {
     void *backend_handle;
     api_function functions;
@@ -70,6 +78,11 @@ bool
 wasi_nn_initialize()
 {
     NN_DBG_PRINTF("[WASI NN General] Initializing wasi-nn");
+
+    if (os_mutex_init(&wasi_nn_lock)) {
+        NN_ERR_PRINTF("Error while initializing global lock");
+        return false;
+    }
 
     wasi_nn_key = wasm_runtime_create_context_key(dtor);
     if (wasi_nn_key == NULL) {
@@ -165,6 +178,8 @@ wasi_nn_destroy()
 
         memset(&lookup[i].functions, 0, sizeof(api_function));
     }
+
+    os_mutex_destroy(&wasi_nn_lock);
 }
 
 /* Utils */
@@ -377,6 +392,8 @@ detect_and_load_backend(graph_encoding backend_hint,
                         graph_encoding *loaded_backend,
                         const char *model_filename)
 {
+    bool ret;
+
     if (backend_hint > autodetect)
         return false;
 
@@ -388,14 +405,19 @@ detect_and_load_backend(graph_encoding backend_hint,
 
     *loaded_backend = backend_hint;
 
+    os_mutex_lock(&wasi_nn_lock);
     /* if already loaded */
-    if (lookup[backend_hint].backend_handle)
+    if (lookup[backend_hint].backend_handle) {
+        os_mutex_unlock(&wasi_nn_lock);
         return true;
+    }
 
     const char *backend_lib_name =
         graph_encoding_to_backend_lib_name(backend_hint);
-    if (!backend_lib_name)
+    if (!backend_lib_name) {
+        os_mutex_unlock(&wasi_nn_lock);
         return false;
+    }
 
     return prepare_backend(backend_lib_name, backends + backend_hint);
 }
