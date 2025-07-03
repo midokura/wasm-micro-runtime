@@ -108,6 +108,40 @@ is_valid_graph_execution_context(TFLiteContext *tfl_ctx,
     return success;
 }
 
+
+wasi_nn_error save_resized_tensor_as_jpeg(const cv::Mat& resized_mat, const std::string& output_path) {
+    std::vector<uchar> jpeg_buf;
+    std::vector<int> jpeg_params = {cv::IMWRITE_JPEG_QUALITY, 90};
+
+    cv::Mat converted;
+    if (resized_mat.type() == CV_32FC3) {
+        cv::Mat tmp_8u;
+        resized_mat.convertTo(tmp_8u, CV_8UC3, 255.0);
+        cv::cvtColor(tmp_8u, converted, cv::COLOR_RGB2BGR);
+    } else if (resized_mat.type() == CV_8UC3) {
+        cv::cvtColor(resized_mat, converted, cv::COLOR_RGB2BGR);
+    } else {
+        NN_ERR_PRINTF("Unsupported image format: type=%d", resized_mat.type());
+        return invalid_argument;
+    }
+
+    if (!cv::imencode(".jpg", converted, jpeg_buf, jpeg_params)) {
+        NN_ERR_PRINTF("JPEG encoding failed.");
+        return invalid_argument;
+    }
+
+    FILE* fp = fopen(output_path.c_str(), "wb");
+    if (!fp) {
+        NN_ERR_PRINTF("Failed to open output file: %s", output_path.c_str());
+        return invalid_argument;
+    }
+
+    fwrite(jpeg_buf.data(), 1, jpeg_buf.size(), fp);
+    fclose(fp);
+    return success;
+}
+
+static uint32_t jpeg_save_counter = 0;
 static wasi_nn_error
 preprocess_and_resize_tensor(TfLiteTensor *input_tensor_tf,
                              tensor *input_tensor, void **output_data)
@@ -118,23 +152,29 @@ preprocess_and_resize_tensor(TfLiteTensor *input_tensor_tf,
     }
     uint32_t tf_h = input_tensor_tf->dims->data[1];
     uint32_t tf_w = input_tensor_tf->dims->data[2];
-    uint32_t img_h = input_tensor->dimensions->buf[1];
-    uint32_t img_w = input_tensor->dimensions->buf[2];
+    uint32_t img_h = input_tensor->dimensions->buf[2];
+    uint32_t img_w = input_tensor->dimensions->buf[3];
     if (tf_h == 0 || tf_w == 0 || img_h == 0 || img_w == 0) {
         NN_ERR_PRINTF("Invalid tensor dimensions.");
         return invalid_argument;
     }
+    NN_DBG_PRINTF("Resizing tensor from (%d, %d) to (%d, %d)",
+                 img_h, img_w, tf_h, tf_w);
+    char filename_org[64];
+    snprintf(filename_org, sizeof(filename_org), "/tmp/non_tf-resized_%04d.jpg", jpeg_save_counter);
     cv::Mat resized_mat;
     switch (input_tensor->type) {
         case fp32:
         {
             cv::Mat input_mat(img_h, img_w, CV_32FC3, input_tensor->data);
+            save_resized_tensor_as_jpeg(input_mat, filename_org);
             cv::resize(input_mat, resized_mat, cv::Size(tf_w, tf_h));
             break;
         }
         case up8:
         {
             cv::Mat input_mat(img_h, img_w, CV_8UC3, input_tensor->data);
+            save_resized_tensor_as_jpeg(input_mat, filename_org);
             cv::resize(input_mat, resized_mat, cv::Size(tf_w, tf_h));
             break;
         }
@@ -147,6 +187,13 @@ preprocess_and_resize_tensor(TfLiteTensor *input_tensor_tf,
     if (output_data == NULL) {
         NN_ERR_PRINTF("Error when allocating memory for resized tensor.");
         return too_large;
+    }
+    char filename[64];
+    snprintf(filename, sizeof(filename), "/tmp/tf-resized_%04d.jpg", jpeg_save_counter++);
+
+    wasi_nn_error jpeg_result = save_resized_tensor_as_jpeg(resized_mat, filename);
+    if (jpeg_result != success) {
+       return jpeg_result;
     }
     bh_memcpy_s(*output_data, data_length, resized_mat.data, data_length);
     // printf("First value in resized_mat: %f\n", *((float*)resized_mat.data));

@@ -198,7 +198,19 @@ wasi_nn_error save_resized_tensor_as_jpeg(const cv::Mat& resized_mat, const std:
     std::vector<uchar> jpeg_buf;
     std::vector<int> jpeg_params = {cv::IMWRITE_JPEG_QUALITY, 90};
 
-    if (!cv::imencode(".jpg", resized_mat, jpeg_buf, jpeg_params)) {
+    cv::Mat converted;
+    if (resized_mat.type() == CV_32FC3) {
+        cv::Mat tmp_8u;
+        resized_mat.convertTo(tmp_8u, CV_8UC3, 255.0);
+        cv::cvtColor(tmp_8u, converted, cv::COLOR_RGB2BGR);
+    } else if (resized_mat.type() == CV_8UC3) {
+        cv::cvtColor(resized_mat, converted, cv::COLOR_RGB2BGR);
+    } else {
+        NN_ERR_PRINTF("Unsupported image format: type=%d", resized_mat.type());
+        return invalid_argument;
+    }
+
+    if (!cv::imencode(".jpg", converted, jpeg_buf, jpeg_params)) {
         NN_ERR_PRINTF("JPEG encoding failed.");
         return invalid_argument;
     }
@@ -220,27 +232,33 @@ preprocess_and_resize_tensor_onnx(int64_t *model_dims, tensor *input_tensor,
                                   void **output_data)
 {
 
-    uint32_t onnx_h = model_dims[1];
-    uint32_t onnx_w = model_dims[2];
-    uint32_t img_h = input_tensor->dimensions->buf[1];
-    uint32_t img_w = input_tensor->dimensions->buf[2];
+    uint32_t onnx_h = model_dims[2];
+    uint32_t onnx_w = model_dims[3];
+    uint32_t img_h = input_tensor->dimensions->buf[2];
+    uint32_t img_w = input_tensor->dimensions->buf[3];
 
     if (onnx_h == 0 || onnx_w == 0 || img_h == 0 || img_w == 0) {
         NN_ERR_PRINTF("Invalid tensor dimensions.");
         return invalid_argument;
     }
+    char filename_org[64];
+    snprintf(filename_org, sizeof(filename_org), "/tmp/non_onnx-resized_%04d.jpg", jpeg_save_counter);
 
     cv::Mat resized_mat;
+    NN_DBG_PRINTF("Resizing tensor from (%d, %d) to (%d, %d)",
+                 img_h, img_w, onnx_h, onnx_w);
     switch (input_tensor->type) {
         case fp32:
         {
             cv::Mat input_mat(img_h, img_w, CV_32FC3, input_tensor->data);
+            save_resized_tensor_as_jpeg(input_mat, filename_org);
             cv::resize(input_mat, resized_mat, cv::Size(onnx_w, onnx_h));
             break;
         }
         case up8:
         {
             cv::Mat input_mat(img_h, img_w, CV_8UC3, input_tensor->data);
+            save_resized_tensor_as_jpeg(input_mat, filename_org);
             cv::resize(input_mat, resized_mat, cv::Size(onnx_w, onnx_h));
             break;
         }
@@ -257,7 +275,7 @@ preprocess_and_resize_tensor_onnx(int64_t *model_dims, tensor *input_tensor,
     }
 
     char filename[64];
-    snprintf(filename, sizeof(filename), "/tmp/resized_%04d.jpg", jpeg_save_counter++);
+    snprintf(filename, sizeof(filename), "/tmp/onnx-resized_%04d.jpg", jpeg_save_counter++);
 
     wasi_nn_error jpeg_result = save_resized_tensor_as_jpeg(resized_mat, filename);
     if (jpeg_result != success) {
@@ -618,14 +636,18 @@ set_input(void *onnx_ctx, graph_execution_context ctx, uint32_t index, tensor *i
 
     void *input_tensor_data = input_tensor->data;
     void *input_tensor_scaled_data = NULL;
+    NN_INFO_PRINTF("Model tensor size: %zu, Input tensor size: %zu",
+                   model_tensor_size, input_tensor_size);
     if (model_tensor_size != input_tensor_size) {
         NN_INFO_PRINTF("Resizing input tensor to match model shape.");
         preprocess_and_resize_tensor_onnx(model_dims.data(), input_tensor,
                                           &input_tensor_scaled_data);
         input_tensor_data = input_tensor_scaled_data;
         // Refresh the information
-        for (size_t i = 0; i < num_model_dims; ++i)
+        for (size_t i = 0; i < num_model_dims; ++i) {
             input_tensor->dimensions->buf[i] = model_dims[i];
+            NN_INFO_PRINTF("dim[%zu] = %lld", i, model_dims[i]);
+        }
     }
 
     ort_ctx->ort_api->ReleaseTypeInfo(type_info);
@@ -872,6 +894,12 @@ get_output(void *onnx_ctx, graph_execution_context ctx, uint32_t index, tensor_d
 
     memcpy(out_buffer, tensor_data, output_size_bytes);
     *out_buffer_size = output_size_bytes;
+
+    float *out_buffer_float = (float *)out_buffer;
+    NN_INFO_PRINTF("Output tensor data copied to buffer, size: %zu bytes", output_size_bytes);
+    for (size_t i = 0; i < tensor_size; i++) {
+        NN_DBG_PRINTF("Output byte %zu: %f", i, (out_buffer_float)[i]);
+    }
 
     NN_INFO_PRINTF("Output tensor retrieved for context %d, index %d, size %zu bytes", 
                   ctx, index, output_size_bytes);
