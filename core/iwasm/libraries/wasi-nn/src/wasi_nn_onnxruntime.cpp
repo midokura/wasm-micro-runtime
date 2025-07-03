@@ -10,6 +10,7 @@
 #include <vector>
 #include <unordered_map>
 #include <opencv2/opencv.hpp>
+#include <stdio.h> 
 #include "bh_platform.h"
 #include "wasi_nn_private.h"
 #include "wasi_nn.h"
@@ -191,6 +192,29 @@ get_tensor_element_size(tensor_type type)
     }
 }
 
+
+
+wasi_nn_error save_resized_tensor_as_jpeg(const cv::Mat& resized_mat, const std::string& output_path) {
+    std::vector<uchar> jpeg_buf;
+    std::vector<int> jpeg_params = {cv::IMWRITE_JPEG_QUALITY, 90};
+
+    if (!cv::imencode(".jpg", resized_mat, jpeg_buf, jpeg_params)) {
+        NN_ERR_PRINTF("JPEG encoding failed.");
+        return invalid_argument;
+    }
+
+    FILE* fp = fopen(output_path.c_str(), "wb");
+    if (!fp) {
+        NN_ERR_PRINTF("Failed to open output file: %s", output_path.c_str());
+        return invalid_argument;
+    }
+
+    fwrite(jpeg_buf.data(), 1, jpeg_buf.size(), fp);
+    fclose(fp);
+    return success;
+}
+
+static uint32_t jpeg_save_counter = 0;
 static wasi_nn_error
 preprocess_and_resize_tensor_onnx(int64_t *model_dims, tensor *input_tensor,
                                   void **output_data)
@@ -232,6 +256,13 @@ preprocess_and_resize_tensor_onnx(int64_t *model_dims, tensor *input_tensor,
         return too_large;
     }
 
+    char filename[64];
+    snprintf(filename, sizeof(filename), "/tmp/resized_%04d.jpg", jpeg_save_counter++);
+
+    wasi_nn_error jpeg_result = save_resized_tensor_as_jpeg(resized_mat, filename);
+    if (jpeg_result != success) {
+       return jpeg_result;
+    }
     bh_memcpy_s(*output_data, data_length, resized_mat.data, data_length);
     return success;
 }
