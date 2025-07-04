@@ -226,6 +226,36 @@ wasi_nn_error save_resized_tensor_as_jpeg(const cv::Mat& resized_mat, const std:
     return success;
 }
 
+
+static std::vector<float> convert_interleaved_to_planar_chw(
+    const float* interleaved,
+    int width, int height)
+{
+    const float mean[3] = {0.485f, 0.456f, 0.406f};
+    const float std[3]  = {0.229f, 0.224f, 0.225f};
+
+
+    cv::Mat input_norm(height, width, CV_32FC3, const_cast<float*>(interleaved));
+
+    std::vector<cv::Mat> channels(3);
+    cv::split(input_norm, channels);
+
+    for (int i = 0; i < 3; ++i) {
+        channels[i] = (channels[i] - mean[i]) / std[i];
+    }
+
+    std::vector<float> nchw;
+    nchw.reserve(3 * width * height);
+
+    for (int c = 0; c < 3; ++c) {
+        nchw.insert(nchw.end(),
+                    (float*)channels[c].datastart,
+                    (float*)channels[c].dataend);
+    }
+
+    return nchw;
+}
+
 static uint32_t jpeg_save_counter = 0;
 static wasi_nn_error
 preprocess_and_resize_tensor_onnx(int64_t *model_dims, tensor *input_tensor,
@@ -650,6 +680,11 @@ set_input(void *onnx_ctx, graph_execution_context ctx, uint32_t index, tensor *i
         }
     }
 
+    std::vector<float> input_chw = convert_interleaved_to_planar_chw (
+        (const float *)input_tensor_data,
+        input_tensor->dimensions->buf[3], input_tensor->dimensions->buf[2]);
+ 
+
     ort_ctx->ort_api->ReleaseTypeInfo(type_info);
 
     size_t num_dims = input_tensor->dimensions->size;
@@ -672,8 +707,8 @@ set_input(void *onnx_ctx, graph_execution_context ctx, uint32_t index, tensor *i
     }
 
     status = ort_ctx->ort_api->CreateTensorWithDataAsOrtValue(
-        exec_ctx->memory_info, input_tensor->data,
-        get_tensor_element_size(input_tensor->type) * total_elements,
+        exec_ctx->memory_info, input_chw.data(),
+        input_chw.size() * sizeof(float),
         ort_dims, num_dims, ort_type, &input_value);
 
     free(ort_dims);
