@@ -509,9 +509,17 @@ get_output(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
         float *ot =
             tfl_ctx->interpreters[ctx].interpreter->typed_output_tensor<float>(
                 index);
-
+        for (uint32_t i = 0; i < model_tensor_size; ++i) {
+            // Print the output tensor values
+            // Note: This is for debugging purposes, can be removed in production.
+            if (ot[i] != 0.0f) { // Avoid printing zeros
+               NN_DBG_PRINTF("Output %d: %f", i, ot[i]);
+            }
+        }
         int size = model_tensor_size * sizeof(float);
+        NN_DBG_PRINTF("Index %d: Dim %d Size %d", index, model_tensor_size, size);
         bh_memcpy_s(output_tensor, size, ot, size);
+        model_tensor_size = size;
     }
     else { // TODO: Assuming uint8 quantized networks.
         TfLiteAffineQuantization *quant_info =
@@ -531,6 +539,7 @@ get_output(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
         float *output_tensor_f = (float *)output_tensor;
         for (uint32_t i = 0; i < model_tensor_size; ++i) {
             output_tensor_f[i] = (ot[i] - zero_point) * scale;
+            NN_DBG_PRINTF("Output %f", ot, output_tensor_f[i]);
         }
     }
 
