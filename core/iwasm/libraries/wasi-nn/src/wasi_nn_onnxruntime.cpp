@@ -196,10 +196,10 @@ preprocess_and_resize_tensor_onnx(int64_t *model_dims, tensor *input_tensor,
                                   void **output_data)
 {
 
-    uint32_t onnx_h = model_dims[1];
-    uint32_t onnx_w = model_dims[2];
-    uint32_t img_h = input_tensor->dimensions->buf[1];
-    uint32_t img_w = input_tensor->dimensions->buf[2];
+    uint32_t onnx_h = model_dims[2];
+    uint32_t onnx_w = model_dims[3];
+    uint32_t img_h = input_tensor->dimensions->buf[2];
+    uint32_t img_w = input_tensor->dimensions->buf[3];
 
     if (onnx_h == 0 || onnx_w == 0 || img_h == 0 || img_w == 0) {
         NN_ERR_PRINTF("Invalid tensor dimensions.");
