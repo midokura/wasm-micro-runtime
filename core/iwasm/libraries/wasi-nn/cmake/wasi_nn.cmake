@@ -37,18 +37,11 @@ endif()
       ${WASI_NN_ROOT}/src/wasi_nn_tensorflowlite.cpp
   )
 
-  target_include_directories(
-    wasi_nn_tflite
-    PUBLIC
-      ${tensorflow_lite_SOURCE_DIR}
-      ${OpenCV_INCLUDE_DIRS}
-  )
-
   target_link_libraries(
     wasi_nn_tflite
     PUBLIC
       vmlib
-      tensorflow-lite
+      tensorflow_lite::tensorflow_lite
       ${OpenCV_LIBS}
 
   )
