@@ -3,10 +3,14 @@
 
 # Try to find installed TFLite
 find_path(tensorflow_lite_INCLUDE_DIR tensorflow/lite/model.h
-  PATHS /usr/include /usr/local/include)
+  PATH_SUFFIXES include
+  PATHS /usr /usr/local
+)
 
 find_library(tensorflow_lite_LIBRARY NAMES tensorflow-lite
-  PATHS /usr/lib /usr/local/lib)
+  PATH_SUFFIXES lib
+  PATHS /usr /usr/local
+)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(tensorflow_lite
