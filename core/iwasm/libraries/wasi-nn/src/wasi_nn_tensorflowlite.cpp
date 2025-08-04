@@ -160,21 +160,17 @@ preprocess_and_resize_tensor(TfLiteTensor *input_tensor_tf,
     }
     NN_DBG_PRINTF("Resizing tensor from (%d, %d) to (%d, %d)",
                  img_h, img_w, tf_h, tf_w);
-    char filename_org[64];
-    snprintf(filename_org, sizeof(filename_org), "/tmp/non_tf-resized_%04d.jpg", jpeg_save_counter);
     cv::Mat resized_mat;
     switch (input_tensor->type) {
         case fp32:
         {
             cv::Mat input_mat(img_h, img_w, CV_32FC3, input_tensor->data);
-            save_resized_tensor_as_jpeg(input_mat, filename_org);
             cv::resize(input_mat, resized_mat, cv::Size(tf_w, tf_h));
             break;
         }
         case up8:
         {
             cv::Mat input_mat(img_h, img_w, CV_8UC3, input_tensor->data);
-            save_resized_tensor_as_jpeg(input_mat, filename_org);
             cv::resize(input_mat, resized_mat, cv::Size(tf_w, tf_h));
             break;
         }
@@ -187,13 +183,6 @@ preprocess_and_resize_tensor(TfLiteTensor *input_tensor_tf,
     if (output_data == NULL) {
         NN_ERR_PRINTF("Error when allocating memory for resized tensor.");
         return too_large;
-    }
-    char filename[64];
-    snprintf(filename, sizeof(filename), "/tmp/tf-resized_%04d.jpg", jpeg_save_counter++);
-
-    wasi_nn_error jpeg_result = save_resized_tensor_as_jpeg(resized_mat, filename);
-    if (jpeg_result != success) {
-       return jpeg_result;
     }
     bh_memcpy_s(*output_data, data_length, resized_mat.data, data_length);
     // printf("First value in resized_mat: %f\n", *((float*)resized_mat.data));

@@ -41,7 +41,8 @@ struct backends_api_functions {
 
 /* HashMap utils */
 static HashMap *hashmap;
-
+static bool
+register_backend(void *handle, api_function *functions);
 static uint32
 hash_func(const void *key)
 {
@@ -184,60 +185,86 @@ is_model_initialized(WASINNContext *wasi_nn_ctx)
     return success;
 }
 
+static graph_encoding select_backend_from_model_filename(const char* model_filename) {
+    NN_WARN_PRINTF("Selecting backend based on model filename: %s", model_filename);
+    if (!model_filename || strlen(model_filename) == 0) {
+        return onnx; // Default to ONNX if no filename is provided
+    }
+    const char* ext = strrchr(model_filename, '.');
+    NN_WARN_PRINTF("Model filename extension: %s", ext ? ext : "none");
+    if (strncmp(ext, ".onnx", 5) == 0) {
+        NN_WARN_PRINTF("Detected ONNX model file extension");
+        return onnx;
+    } else if (strncmp(ext, ".tflite", 7) == 0) {
+        NN_WARN_PRINTF("Detected TensorFlow Lite model file extension");
+        return tensorflowlite;
+    } else if (strncmp(ext, ".xml", 4) == 0 || strcmp(ext, ".bin") == 0) {
+        return openvino;
+    } else if (strncmp(ext, ".gguf", 5) == 0) {
+        return ggml;
+    } else {
+        NN_WARN_PRINTF("Unknown model file extension, defaulting to ONNX");
+        return onnx;
+    }
+}
 /*
  *TODO: choose a proper backend based on
  * - hardware
  * - model file format
  * - on device ML framework
  */
+
 static graph_encoding
-choose_a_backend()
+choose_a_backend(const char *model_filename)
 {
-    void *handle;
+    struct {
+        graph_encoding encoding;
+        const char *lib_name;
+    } candidates[] = {
+        { ggml, LLAMACPP_BACKEND_LIB },
+        { openvino, OPENVINO_BACKEND_LIB },
+        { onnx, ONNXRUNTIME_BACKEND_LIB },
+        { tensorflowlite, TFLITE_BACKEND_LIB }
+    };
 
-    handle = dlopen(LLAMACPP_BACKEND_LIB, RTLD_LAZY);
-    if (handle) {
-        NN_INFO_PRINTF("Using llama.cpp backend");
-        dlclose(handle);
-        return ggml;
-    }
+    bool available[sizeof(candidates) / sizeof(candidates[0])] = { false };
 
+    for (unsigned i = 0; i < sizeof(candidates) / sizeof(candidates[0]); ++i) {
+        const char *lib_name = candidates[i].lib_name;
+        void *handle = dlopen(lib_name, RTLD_LAZY);
+        if (!handle) {
 #ifndef NDEBUG
     NN_WARN_PRINTF("%s", dlerror());
 #endif
+            continue;
+        }
 
-    handle = dlopen(OPENVINO_BACKEND_LIB, RTLD_LAZY);
-    if (handle) {
-        NN_INFO_PRINTF("Using openvino backend");
+        api_function dummy_funcs;
+        memset(&dummy_funcs, 0, sizeof(dummy_funcs));
+        if (register_backend(handle, &dummy_funcs)) {
+            available[i] = true;
+        } else {
+            NN_WARN_PRINTF("Backend %s available but missing required symbols", lib_name);
+        }
+
         dlclose(handle);
-        return openvino;
     }
 
-#ifndef NDEBUG
-    NN_WARN_PRINTF("%s", dlerror());
-#endif
+    graph_encoding preferred = select_backend_from_model_filename(model_filename);
 
-    handle = dlopen(ONNXRUNTIME_BACKEND_LIB, RTLD_LAZY);
-    if (handle) {
-        NN_INFO_PRINTF("Using onnxruntime backend");
-        dlclose(handle);
-        return onnx;
+    for (unsigned i = 0; i < sizeof(candidates) / sizeof(candidates[0]); ++i) {
+        if (candidates[i].encoding == preferred && available[i]) {
+            NN_INFO_PRINTF("Using preferred backend: %s", candidates[i].lib_name);
+            return preferred;
+        }
     }
 
-#ifndef NDEBUG
-    NN_WARN_PRINTF("%s", dlerror());
-#endif
-
-    handle = dlopen(TFLITE_BACKEND_LIB, RTLD_LAZY);
-    if (handle) {
-        NN_INFO_PRINTF("Using tflite backend");
-        dlclose(handle);
-        return tensorflowlite;
+    for (unsigned i = 0; i < sizeof(candidates) / sizeof(candidates[0]); ++i) {
+        if (available[i]) {
+            NN_INFO_PRINTF("Using fallback backend: %s", candidates[i].lib_name);
+            return candidates[i].encoding;
+        }
     }
-
-#ifndef NDEBUG
-    NN_WARN_PRINTF("%s", dlerror());
-#endif
 
     NN_WARN_PRINTF("No backend found");
     return unknown_backend;
@@ -357,13 +384,14 @@ graph_encoding_to_backend_lib_name(graph_encoding encoding)
 static bool
 detect_and_load_backend(graph_encoding backend_hint,
                         struct backends_api_functions *backends,
-                        graph_encoding *loaded_backend)
+                        graph_encoding *loaded_backend,
+                        const char *model_filename)
 {
     if (backend_hint > autodetect)
         return false;
 
     if (backend_hint == autodetect)
-        backend_hint = choose_a_backend();
+        backend_hint = choose_a_backend(model_filename);
 
     if (backend_hint == unknown_backend)
         return false;
@@ -424,7 +452,7 @@ wasi_nn_load(wasm_exec_env_t exec_env, graph_builder_array_wasm *builder,
     }
 
     graph_encoding loaded_backend = autodetect;
-    if (!detect_and_load_backend(encoding, lookup, &loaded_backend)) {
+    if (!detect_and_load_backend(encoding, lookup, &loaded_backend, NULL)) {
         res = invalid_encoding;
         NN_ERR_PRINTF("load backend failed");
         goto fail;
@@ -482,7 +510,7 @@ wasi_nn_load_by_name(wasm_exec_env_t exec_env, char *name, uint32_t name_len,
     NN_DBG_PRINTF("[WASI NN] LOAD_BY_NAME %s...", name);
 
     graph_encoding loaded_backend = autodetect;
-    if (!detect_and_load_backend(autodetect, lookup, &loaded_backend)) {
+    if (!detect_and_load_backend(autodetect, lookup, &loaded_backend, (const char*) name)) {
         NN_ERR_PRINTF("load backend failed");
         return invalid_encoding;
     }
@@ -541,7 +569,7 @@ wasi_nn_load_by_name_with_config(wasm_exec_env_t exec_env, char *name,
     NN_DBG_PRINTF("[WASI NN] LOAD_BY_NAME_WITH_CONFIG %s %s...", name, config);
 
     graph_encoding loaded_backend = autodetect;
-    if (!detect_and_load_backend(autodetect, lookup, &loaded_backend)) {
+    if (!detect_and_load_backend(autodetect, lookup, &loaded_backend, (const char*) name)) {
         NN_ERR_PRINTF("load backend failed");
         return invalid_encoding;
     }
