@@ -29,7 +29,7 @@ typedef enum {
     // Invalid encoding.
     invalid_encoding,
     // The operation timed out.
-    timeout,
+    busy,
     // Runtime Error.
     runtime_error,
     // Unsupported operation.

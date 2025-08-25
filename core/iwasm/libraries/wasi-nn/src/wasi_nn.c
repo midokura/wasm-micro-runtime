@@ -48,7 +48,8 @@ struct backends_api_functions {
     } while (0)
 
 static void *wasi_nn_key;
-
+static bool
+register_backend(void *handle, api_function *functions);
 static void
 wasi_nn_ctx_destroy(WASINNContext *wasi_nn_ctx)
 {
@@ -140,23 +141,6 @@ wasm_runtime_get_wasi_nn_ctx(wasm_module_inst_t instance)
             wasi_nn_ctx_destroy(newctx);
         }
     }
-    return wasi_nn_ctx;
-}
-
-static WASINNContext *
-lock_ctx(wasm_module_inst_t instance)
-{
-    WASINNContext *wasi_nn_ctx = wasm_runtime_get_wasi_nn_ctx(instance);
-    if (wasi_nn_ctx == NULL) {
-        return NULL;
-    }
-    os_mutex_lock(&wasi_nn_ctx->lock);
-    if (wasi_nn_ctx->busy) {
-        os_mutex_unlock(&wasi_nn_ctx->lock);
-        return NULL;
-    }
-    wasi_nn_ctx->busy = true;
-    os_mutex_unlock(&wasi_nn_ctx->lock);
     return wasi_nn_ctx;
 }
 
@@ -413,7 +397,6 @@ graph_encoding_to_backend_lib_name(graph_encoding encoding)
 
 static bool
 detect_and_load_backend(graph_encoding backend_hint,
-                        struct backends_api_functions *backends,
                         graph_encoding *loaded_backend,
                         const char *model_filename)
 {
@@ -451,12 +434,12 @@ detect_and_load_backend(graph_encoding backend_hint,
 
 static wasi_nn_error
 ensure_backend(wasm_module_inst_t instance, graph_encoding encoding,
-               WASINNContext *wasi_nn_ctx)
+               WASINNContext *wasi_nn_ctx, const char *model_filename)
 {
     wasi_nn_error res;
 
     graph_encoding loaded_backend = autodetect;
-    if (!detect_and_load_backend(encoding, &loaded_backend)) {
+    if (!detect_and_load_backend(encoding, &loaded_backend, model_filename)) {
         res = invalid_encoding;
         NN_ERR_PRINTF("load backend failed");
         goto fail;
@@ -504,6 +487,7 @@ wasi_nn_load(wasm_exec_env_t exec_env, graph_builder_array_wasm *builder,
     if (!instance)
         return runtime_error;
 
+    wasi_nn_error res;
     WASINNContext *wasi_nn_ctx = lock_ctx(instance);
     if (wasi_nn_ctx == NULL) {
         res = busy;
@@ -530,7 +514,7 @@ wasi_nn_load(wasm_exec_env_t exec_env, graph_builder_array_wasm *builder,
         goto fail;
     }
 
-    res = ensure_backend(instance, encoding, wasi_nn_ctx);
+    res = ensure_backend(instance, encoding, wasi_nn_ctx, NULL);
     if (res != success)
         goto fail;
 
@@ -576,14 +560,14 @@ wasi_nn_load_by_name(wasm_exec_env_t exec_env, char *name, uint32_t name_len,
     }
 
     NN_DBG_PRINTF("[WASI NN] LOAD_BY_NAME %s...", name);
-
+    wasi_nn_error res;
     WASINNContext *wasi_nn_ctx = lock_ctx(instance);
     if (wasi_nn_ctx == NULL) {
         res = busy;
         goto fail;
     }
-
-    res = ensure_backend(instance, autodetect, wasi_nn_ctx);
+    graph_encoding loaded_backend = autodetect;
+    res = ensure_backend(instance, loaded_backend, wasi_nn_ctx, (const char*)name);
     if (res != success)
         goto fail;
 
@@ -592,7 +576,6 @@ wasi_nn_load_by_name(wasm_exec_env_t exec_env, char *name, uint32_t name_len,
     if (res != success)
         goto fail;
 
-    wasi_nn_ctx->backend = loaded_backend;
     wasi_nn_ctx->is_model_loaded = true;
     res = success;
 fail:
@@ -632,14 +615,14 @@ wasi_nn_load_by_name_with_config(wasm_exec_env_t exec_env, char *name,
     }
 
     NN_DBG_PRINTF("[WASI NN] LOAD_BY_NAME_WITH_CONFIG %s %s...", name, config);
-
+    wasi_nn_error res;
     WASINNContext *wasi_nn_ctx = lock_ctx(instance);
     if (wasi_nn_ctx == NULL) {
         res = busy;
         goto fail;
     }
 
-    res = ensure_backend(instance, autodetect, wasi_nn_ctx);
+    res = ensure_backend(instance, autodetect, wasi_nn_ctx, (const char*)name);
     if (res != success)
         goto fail;
     ;
@@ -650,7 +633,6 @@ wasi_nn_load_by_name_with_config(wasm_exec_env_t exec_env, char *name,
     if (res != success)
         goto fail;
 
-    wasi_nn_ctx->backend = loaded_backend;
     wasi_nn_ctx->is_model_loaded = true;
     res = success;
 fail:
