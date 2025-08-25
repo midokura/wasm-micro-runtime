@@ -231,21 +231,17 @@ static std::vector<float> convert_interleaved_to_planar_chw(
     const float* interleaved,
     int width, int height)
 {
-    const float mean[3] = {0.485f, 0.456f, 0.406f};
-    const float std[3]  = {0.229f, 0.224f, 0.225f};
+    // Wrap HWC buffer into OpenCV Mat
+    cv::Mat input(height, width, CV_32FC3,
+                  const_cast<float*>(interleaved));
 
-
-    cv::Mat input_norm(height, width, CV_32FC3, const_cast<float*>(interleaved));
-
+    // Split into 3 channels (planar)
     std::vector<cv::Mat> channels(3);
-    cv::split(input_norm, channels);
+    cv::split(input, channels);
 
-    for (int i = 0; i < 3; ++i) {
-        channels[i] = (channels[i] - mean[i]) / std[i];
-    }
-
+    // Concatenate channel by channel → NCHW
     std::vector<float> nchw;
-    nchw.reserve(3 * width * height);
+    nchw.reserve(width * height * 3);
 
     for (int c = 0; c < 3; ++c) {
         nchw.insert(nchw.end(),
