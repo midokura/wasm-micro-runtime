@@ -338,6 +338,9 @@ init_backend(void **onnx_ctx)
         return err;
     }
 
+    g_ort_ctx.ort_api->SetIntraOpNumThreads(g_ort_ctx.session_options, 1);
+    g_ort_ctx.ort_api->SetInterOpNumThreads(g_ort_ctx.session_options, 1);
+
     status = g_ort_ctx.ort_api->SetSessionGraphOptimizationLevel(g_ort_ctx.session_options, ORT_ENABLE_BASIC);
     if (status != nullptr) {
         wasi_nn_error err = convert_ort_error_to_wasi_nn_error(status);
