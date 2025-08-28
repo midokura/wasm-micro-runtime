@@ -24,6 +24,7 @@ typedef struct {
 } thread_wrapper_arg;
 
 #ifdef OS_ENABLE_HW_BOUND_CHECK
+#include <execinfo.h>
 /* The signal handler passed to os_thread_signal_init() */
 static os_thread_local_attribute os_signal_handler signal_handler;
 #endif
@@ -609,8 +610,24 @@ static void
 signal_callback(int sig_num, siginfo_t *sig_info, void *sig_ucontext)
 {
     void *sig_addr = sig_info->si_addr;
+    fprintf(stderr,
+            "[signal_callback] sig=%d (%s), si_code=%d, si_addr=%p\n",
+            sig_num,
+            strsignal(sig_num),
+            sig_info ? sig_info->si_code : -1,
+            sig_addr);
     struct sigaction *prev_sig_act = NULL;
 
+    void *buffer[64];
+    int nptrs = backtrace(buffer, 64);
+    char **symbols = backtrace_symbols(buffer, nptrs);
+    if (symbols) {
+        fprintf(stderr, "Backtrace (most recent call first):\n");
+        for (int i = 0; i < nptrs; i++) {
+            fprintf(stderr, "  %s\n", symbols[i]);
+        }
+        free(symbols);
+    }
     mask_signals(SIG_BLOCK);
 
     /* Try to handle signal with the registered signal handler */
