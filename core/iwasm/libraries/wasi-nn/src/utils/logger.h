@@ -13,7 +13,6 @@
     (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 
 /* Disable a level by removing the define */
-#ifndef NN_LOG_LEVEL
 /*
     0 -> debug, info, warn, err
     1 -> info, warn, err
@@ -22,7 +21,7 @@
     4 -> NO LOGS
 */
 #define NN_LOG_LEVEL 0
-#endif
+
 
 // Definition of the levels
 #if NN_LOG_LEVEL <= 3

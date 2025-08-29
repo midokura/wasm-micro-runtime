@@ -329,6 +329,7 @@ init_backend(void **onnx_ctx)
         return err;
     }
     NN_INFO_PRINTF("ONNX Runtime environment created successfully");
+    
 
     status = g_ort_ctx.ort_api->CreateSessionOptions(&g_ort_ctx.session_options);
     if (status != nullptr) {
@@ -337,9 +338,6 @@ init_backend(void **onnx_ctx)
         NN_ERR_PRINTF("Failed to create ONNX Runtime session options");
         return err;
     }
-
-    g_ort_ctx.ort_api->SetIntraOpNumThreads(g_ort_ctx.session_options, 1);
-    g_ort_ctx.ort_api->SetInterOpNumThreads(g_ort_ctx.session_options, 1);
 
     status = g_ort_ctx.ort_api->SetSessionGraphOptimizationLevel(g_ort_ctx.session_options, ORT_ENABLE_BASIC);
     if (status != nullptr) {
@@ -666,12 +664,17 @@ set_input(void *onnx_ctx, graph_execution_context ctx, uint32_t index, tensor *i
             NN_INFO_PRINTF("dim[%zu] = %ld", i, model_dims[i]);
         }
     }
-
+    NN_INFO_PRINTF("Input tensor type: %d", input_tensor->type);
+    NN_INFO_PRINTF("input tensor shape:");
+    for (size_t i = 0; i < input_tensor->dimensions->size; ++i) {
+        NN_INFO_PRINTF("  dim[%zu] = %u", i, input_tensor->dimensions->buf[i]);
+    }
     std::vector<float> input_chw = convert_interleaved_to_planar_chw (
         (const float *)input_tensor_data,
         input_tensor->dimensions->buf[3], input_tensor->dimensions->buf[2]);
  
-
+    NN_INFO_PRINTF("Converted input tensor to CHW format, size: %zu", input_chw.size());
+    
     ort_ctx->ort_api->ReleaseTypeInfo(type_info);
 
     size_t num_dims = input_tensor->dimensions->size;
@@ -680,10 +683,15 @@ set_input(void *onnx_ctx, graph_execution_context ctx, uint32_t index, tensor *i
         NN_ERR_PRINTF("Failed to allocate memory for tensor dimensions");
         return runtime_error;
     }
-
+    size_t total_elements = 1;
     for (size_t i = 0; i < num_dims; i++) {
         ort_dims[i] = input_tensor->dimensions->buf[i];
+        total_elements *= input_tensor->dimensions->buf[i];
+        NN_INFO_PRINTF("  ort_dims[%zu]=%ld", i, ort_dims[i]);
     }
+
+    NN_INFO_PRINTF("input_chw.size()=%zu total_elements=%zu", 
+               input_chw.size(), total_elements);
 
     OrtValue *input_value = nullptr;
     status = ort_ctx->ort_api->CreateTensorAsOrtValue(
