@@ -682,18 +682,10 @@ set_input(void *onnx_ctx, graph_execution_context ctx, uint32_t index, tensor *i
         ort_dims[i] = input_tensor->dimensions->buf[i];
     }
 
-    ONNXTensorElementDataType ort_type = convert_wasi_nn_type_to_ort_type(input_tensor->type);
-
     OrtValue *input_value = nullptr;
-    size_t total_elements = 1;
-    for (size_t i = 0; i < num_dims; i++) {
-        total_elements *= input_tensor->dimensions->buf[i];
-    }
-
-    status = ort_ctx->ort_api->CreateTensorWithDataAsOrtValue(
-        exec_ctx->memory_info, input_chw.data(),
-        input_chw.size() * sizeof(float),
-        ort_dims, num_dims, ort_type, &input_value);
+    status = ort_ctx->ort_api->CreateTensorAsOrtValue(
+        ort_ctx->allocator, ort_dims, num_dims,
+        ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT, &input_value);
 
     free(ort_dims);
 
@@ -703,11 +695,25 @@ set_input(void *onnx_ctx, graph_execution_context ctx, uint32_t index, tensor *i
         return err;
     }
 
+   void *dst = nullptr;
+    status = ort_ctx->ort_api->GetTensorMutableData(input_value, &dst);
+    if (status != nullptr || dst == nullptr) {
+        if (status) { convert_ort_error_to_wasi_nn_error(status); }
+        ort_ctx->ort_api->ReleaseValue(input_value);
+        if (input_tensor_scaled_data) free(input_tensor_scaled_data);
+        NN_ERR_PRINTF("Failed to get mutable tensor data");
+        return runtime_error;
+    }
+    memcpy(dst, input_chw.data(), input_chw.size() * sizeof(float));
+
     if (exec_ctx->inputs.count(index) > 0) {
         ort_ctx->ort_api->ReleaseValue(exec_ctx->inputs[index]);
     }
     exec_ctx->inputs[index] = input_value;
 
+    if (input_tensor_scaled_data) {
+        free(input_tensor_scaled_data);
+    }
     NN_INFO_PRINTF("Input tensor set for context %d, index %d", ctx, index);
     return success;
 }
