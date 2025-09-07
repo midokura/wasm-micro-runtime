@@ -193,7 +193,6 @@ get_tensor_element_size(tensor_type type)
 }
 
 
-
 wasi_nn_error save_resized_tensor_as_jpeg(const cv::Mat& resized_mat, const std::string& output_path) {
     std::vector<uchar> jpeg_buf;
     std::vector<int> jpeg_params = {cv::IMWRITE_JPEG_QUALITY, 90};
@@ -227,10 +226,12 @@ wasi_nn_error save_resized_tensor_as_jpeg(const cv::Mat& resized_mat, const std:
 }
 
 
+
 static std::vector<float> convert_interleaved_to_planar_chw(
     const float* interleaved,
     int width, int height)
 {
+
     // Wrap HWC buffer into OpenCV Mat
     cv::Mat input(height, width, CV_32FC3,
                   const_cast<float*>(interleaved));
@@ -251,6 +252,7 @@ static std::vector<float> convert_interleaved_to_planar_chw(
 
     return nchw;
 }
+
 
 static uint32_t jpeg_save_counter = 0;
 static wasi_nn_error
@@ -686,6 +688,7 @@ set_input(void *onnx_ctx, graph_execution_context ctx, uint32_t index, tensor *i
     status = ort_ctx->ort_api->CreateTensorAsOrtValue(
         ort_ctx->allocator, ort_dims, num_dims,
         ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT, &input_value);
+
 
     free(ort_dims);
 
