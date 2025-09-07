@@ -10,6 +10,7 @@
 #include <vector>
 #include <unordered_map>
 #include <opencv2/opencv.hpp>
+#include <stdio.h> 
 #include "bh_platform.h"
 #include "wasi_nn_private.h"
 #include "wasi_nn.h"
@@ -191,25 +192,57 @@ get_tensor_element_size(tensor_type type)
     }
 }
 
+
+wasi_nn_error save_resized_tensor_as_jpeg(const cv::Mat& resized_mat, const std::string& output_path) {
+    std::vector<uchar> jpeg_buf;
+    std::vector<int> jpeg_params = {cv::IMWRITE_JPEG_QUALITY, 90};
+
+    cv::Mat converted;
+    if (resized_mat.type() == CV_32FC3) {
+        cv::Mat tmp_8u;
+        resized_mat.convertTo(tmp_8u, CV_8UC3, 255.0);
+        cv::cvtColor(tmp_8u, converted, cv::COLOR_RGB2BGR);
+    } else if (resized_mat.type() == CV_8UC3) {
+        cv::cvtColor(resized_mat, converted, cv::COLOR_RGB2BGR);
+    } else {
+        NN_ERR_PRINTF("Unsupported image format: type=%d", resized_mat.type());
+        return invalid_argument;
+    }
+
+    if (!cv::imencode(".jpg", converted, jpeg_buf, jpeg_params)) {
+        NN_ERR_PRINTF("JPEG encoding failed.");
+        return invalid_argument;
+    }
+
+    FILE* fp = fopen(output_path.c_str(), "wb");
+    if (!fp) {
+        NN_ERR_PRINTF("Failed to open output file: %s", output_path.c_str());
+        return invalid_argument;
+    }
+
+    fwrite(jpeg_buf.data(), 1, jpeg_buf.size(), fp);
+    fclose(fp);
+    return success;
+}
+
+
+
 static std::vector<float> convert_interleaved_to_planar_chw(
     const float* interleaved,
     int width, int height)
 {
-    const float mean[3] = {0.485f, 0.456f, 0.406f};
-    const float std[3]  = {0.229f, 0.224f, 0.225f};
 
+    // Wrap HWC buffer into OpenCV Mat
+    cv::Mat input(height, width, CV_32FC3,
+                  const_cast<float*>(interleaved));
 
-    cv::Mat input_norm(height, width, CV_32FC3, const_cast<float*>(interleaved));
-
+    // Split into 3 channels (planar)
     std::vector<cv::Mat> channels(3);
-    cv::split(input_norm, channels);
+    cv::split(input, channels);
 
-    for (int i = 0; i < 3; ++i) {
-        channels[i] = (channels[i] - mean[i]) / std[i];
-    }
-
+    // Concatenate channel by channel → NCHW
     std::vector<float> nchw;
-    nchw.reserve(3 * width * height);
+    nchw.reserve(width * height * 3);
 
     for (int c = 0; c < 3; ++c) {
         nchw.insert(nchw.end(),
@@ -220,6 +253,8 @@ static std::vector<float> convert_interleaved_to_planar_chw(
     return nchw;
 }
 
+
+static uint32_t jpeg_save_counter = 0;
 static wasi_nn_error
 preprocess_and_resize_tensor_onnx(int64_t *model_dims, tensor *input_tensor,
                                   void **output_data)
@@ -234,8 +269,9 @@ preprocess_and_resize_tensor_onnx(int64_t *model_dims, tensor *input_tensor,
         NN_ERR_PRINTF("Invalid tensor dimensions.");
         return invalid_argument;
     }
-
     cv::Mat resized_mat;
+    NN_DBG_PRINTF("Resizing tensor from (%d, %d) to (%d, %d)",
+                 img_h, img_w, onnx_h, onnx_w);
     switch (input_tensor->type) {
         case fp32:
         {
@@ -417,7 +453,7 @@ load(void *onnx_ctx, graph_builder_array *builder, graph_encoding encoding,
         return invalid_argument;
     }
 
-    NN_INFO_PRINTF("[ONNX Runtime] Loading model of size %zu bytes...", builder->buf[0].size);
+    NN_INFO_PRINTF("[ONNX Runtime] Loading model of size %u bytes...", builder->buf[0].size);
 
     if (builder->buf[0].size > 16) {
         NN_INFO_PRINTF("Model header bytes: %02x %02x %02x %02x %02x %02x %02x %02x",
@@ -616,14 +652,18 @@ set_input(void *onnx_ctx, graph_execution_context ctx, uint32_t index, tensor *i
 
     void *input_tensor_data = input_tensor->data;
     void *input_tensor_scaled_data = NULL;
+    NN_INFO_PRINTF("Model tensor size: %zu, Input tensor size: %zu",
+                   model_tensor_size, input_tensor_size);
     if (model_tensor_size != input_tensor_size) {
         NN_INFO_PRINTF("Resizing input tensor to match model shape.");
         preprocess_and_resize_tensor_onnx(model_dims.data(), input_tensor,
                                           &input_tensor_scaled_data);
         input_tensor_data = input_tensor_scaled_data;
         // Refresh the information
-        for (size_t i = 0; i < num_model_dims; ++i)
+        for (size_t i = 0; i < num_model_dims; ++i) {
             input_tensor->dimensions->buf[i] = model_dims[i];
+            NN_INFO_PRINTF("dim[%zu] = %ld", i, model_dims[i]);
+        }
     }
 
     std::vector<float> input_chw = convert_interleaved_to_planar_chw (
@@ -644,18 +684,11 @@ set_input(void *onnx_ctx, graph_execution_context ctx, uint32_t index, tensor *i
         ort_dims[i] = input_tensor->dimensions->buf[i];
     }
 
-    ONNXTensorElementDataType ort_type = convert_wasi_nn_type_to_ort_type(input_tensor->type);
-
     OrtValue *input_value = nullptr;
-    size_t total_elements = 1;
-    for (size_t i = 0; i < num_dims; i++) {
-        total_elements *= input_tensor->dimensions->buf[i];
-    }
+    status = ort_ctx->ort_api->CreateTensorAsOrtValue(
+        ort_ctx->allocator, ort_dims, num_dims,
+        ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT, &input_value);
 
-    status = ort_ctx->ort_api->CreateTensorWithDataAsOrtValue(
-        exec_ctx->memory_info, input_chw.data(),
-        input_chw.size() * sizeof(float),
-        ort_dims, num_dims, ort_type, &input_value);
 
     free(ort_dims);
 
@@ -665,11 +698,25 @@ set_input(void *onnx_ctx, graph_execution_context ctx, uint32_t index, tensor *i
         return err;
     }
 
+   void *dst = nullptr;
+    status = ort_ctx->ort_api->GetTensorMutableData(input_value, &dst);
+    if (status != nullptr || dst == nullptr) {
+        if (status) { convert_ort_error_to_wasi_nn_error(status); }
+        ort_ctx->ort_api->ReleaseValue(input_value);
+        if (input_tensor_scaled_data) free(input_tensor_scaled_data);
+        NN_ERR_PRINTF("Failed to get mutable tensor data");
+        return runtime_error;
+    }
+    memcpy(dst, input_chw.data(), input_chw.size() * sizeof(float));
+
     if (exec_ctx->inputs.count(index) > 0) {
         ort_ctx->ort_api->ReleaseValue(exec_ctx->inputs[index]);
     }
     exec_ctx->inputs[index] = input_value;
 
+    if (input_tensor_scaled_data) {
+        free(input_tensor_scaled_data);
+    }
     NN_INFO_PRINTF("Input tensor set for context %d, index %d", ctx, index);
     return success;
 }
@@ -801,7 +848,7 @@ get_output(void *onnx_ctx, graph_execution_context ctx, uint32_t index, tensor_d
 
     NN_INFO_PRINTF("Output tensor dimensions: ");
     for (size_t i = 0; i < num_dims; i++) {
-        NN_INFO_PRINTF("  dim[%zu] = %lld", i, dims[i]);
+        NN_INFO_PRINTF("  dim[%zu] = %ld", i, dims[i]);
     }
     NN_INFO_PRINTF("Total elements: %zu", tensor_size);
 
@@ -875,6 +922,12 @@ get_output(void *onnx_ctx, graph_execution_context ctx, uint32_t index, tensor_d
 
     memcpy(out_buffer, tensor_data, output_size_bytes);
     *out_buffer_size = output_size_bytes;
+
+    float *out_buffer_float = (float *)out_buffer;
+    NN_INFO_PRINTF("Output tensor data copied to buffer, size: %zu bytes", output_size_bytes);
+    for (size_t i = 0; i < tensor_size; i++) {
+        NN_DBG_PRINTF("Output byte %zu: %f", i, (out_buffer_float)[i]);
+    }
 
     NN_INFO_PRINTF("Output tensor retrieved for context %d, index %d, size %zu bytes", 
                   ctx, index, output_size_bytes);
