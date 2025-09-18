@@ -152,8 +152,8 @@ preprocess_and_resize_tensor(TfLiteTensor *input_tensor_tf,
     }
     uint32_t tf_h = input_tensor_tf->dims->data[1];
     uint32_t tf_w = input_tensor_tf->dims->data[2];
-    uint32_t img_h = input_tensor->dimensions->buf[2];
-    uint32_t img_w = input_tensor->dimensions->buf[3];
+    uint32_t img_h = input_tensor->dimensions->buf[1];
+    uint32_t img_w = input_tensor->dimensions->buf[2];
     if (tf_h == 0 || tf_w == 0 || img_h == 0 || img_w == 0) {
         NN_ERR_PRINTF("Invalid tensor dimensions.");
         return invalid_argument;
