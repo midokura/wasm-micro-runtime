@@ -516,9 +516,17 @@ get_output(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
         return too_large;
     }
 
+    // Log output tensor shape for debugging
+    NN_DBG_PRINTF("Output tensor shape: dims=%d", tensor->dims->size);
+    for (int i = 0; i < (int)tensor->dims->size; ++i) {
+        NN_DBG_PRINTF("  Dimension %d: %d", i, tensor->dims->data[i]);
+    }
+
     uint32_t model_tensor_size = 1;
     for (int i = 0; i < (int)tensor->dims->size; ++i)
         model_tensor_size *= (uint32_t)tensor->dims->data[i];
+
+    NN_DBG_PRINTF("Total elements (flattened): %u", model_tensor_size);
 
     if (*output_tensor_size < model_tensor_size) {
         NN_ERR_PRINTF("Insufficient memory to copy tensor %d", index);
@@ -587,9 +595,18 @@ get_output(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
                           tensor->type);
             return invalid_argument;
         }
+
+        // Convert element count to byte size (same as float case for
+        // consistency)
+        int size = model_tensor_size * sizeof(float);
+        NN_DBG_PRINTF("Index %d: Dim %d Size %d", index, model_tensor_size,
+                      size);
+        model_tensor_size = size;
     }
 
     *output_tensor_size = model_tensor_size;
+    NN_DBG_PRINTF("Returning output_tensor_size=%u (number of elements)",
+                  *output_tensor_size);
     return success;
 }
 
