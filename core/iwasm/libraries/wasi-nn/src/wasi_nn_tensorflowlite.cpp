@@ -605,7 +605,7 @@ get_output(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
     }
 
     *output_tensor_size = model_tensor_size;
-    NN_DBG_PRINTF("Returning output_tensor_size=%u (number of elements)",
+    NN_DBG_PRINTF("Returning output_tensor_size=%u (number of bytes)",
                   *output_tensor_size);
     return success;
 }
