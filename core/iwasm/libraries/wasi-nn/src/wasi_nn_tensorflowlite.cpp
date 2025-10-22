@@ -520,43 +520,83 @@ get_output(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
         return too_large;
     }
 
-    if (1) {
-        float *ot =
-            tfl_ctx->interpreters[ctx].interpreter->typed_output_tensor<float>(
-                index);
-        for (uint32_t i = 0; i < model_tensor_size; ++i) {
-            // Print the output tensor values
-            // Note: This is for debugging purposes, can be removed in production.
-            if (ot[i] != 0.0f) { // Avoid printing zeros
-               NN_DBG_PRINTF("Output %d: %f", i, ot[i]);
+    switch (tensor->type) {
+        case kTfLiteFloat32:
+        {
+            float *ot =
+                tfl_ctx->interpreters[ctx].interpreter->typed_output_tensor<float>(
+                    index);
+            for (uint32_t i = 0; i < model_tensor_size; ++i) {
+                // Print the output tensor values
+                // Note: This is for debugging purposes, can be removed in production.
+                if (ot[i] != 0.0f) { // Avoid printing zeros
+                   NN_DBG_PRINTF("Output %d: %f", i, ot[i]);
+                }
             }
-        }
+        
         int size = model_tensor_size * sizeof(float);
         NN_DBG_PRINTF("Index %d: Dim %d Size %d", index, model_tensor_size, size);
         bh_memcpy_s(output_tensor, size, ot, size);
         model_tensor_size = size;
-    }
-    else { // TODO: Assuming uint8 quantized networks.
-        TfLiteAffineQuantization *quant_info =
-            (TfLiteAffineQuantization *)tensor->quantization.params;
-        if (quant_info->scale->size != 1 || quant_info->zero_point->size != 1) {
-            NN_ERR_PRINTF("Quantization per channel is not supported");
-            return runtime_error;
+        break;
         }
-        uint8_t *ot = tfl_ctx->interpreters[ctx]
-                          .interpreter->typed_output_tensor<uint8_t>(index);
-
-        float scale = quant_info->scale->data[0];
-        float zero_point = (float)quant_info->zero_point->data[0];
-        NN_DBG_PRINTF("output tensor: (scale, offset) = (%f, %f)", scale,
-                      zero_point);
-
-        float *output_tensor_f = (float *)output_tensor;
-        for (uint32_t i = 0; i < model_tensor_size; ++i) {
-            output_tensor_f[i] = (ot[i] - zero_point) * scale;
-            NN_DBG_PRINTF("Output %f", ot, output_tensor_f[i]);
+        case kTfLiteInt32:
+        {
+            int32_t *ot =
+                tfl_ctx->interpreters[ctx].interpreter->typed_output_tensor<int32_t>(
+                    index);
+            int size = model_tensor_size * sizeof(int32_t);
+            bh_memcpy_s(output_tensor, size, ot, size);
+            model_tensor_size = size;
+            break;
+        }
+        case kTfLiteUInt8:
+        {
+            uint8_t *ot =
+                tfl_ctx->interpreters[ctx].interpreter->typed_output_tensor<uint8_t>(
+                    index);
+            int size = model_tensor_size * sizeof(uint8_t);
+            bh_memcpy_s(output_tensor, size, ot, size);
+            model_tensor_size = size;
+            break;
+        }
+        case kTfLiteInt8:
+        {
+            int8_t *ot =
+                tfl_ctx->interpreters[ctx].interpreter->typed_output_tensor<int8_t>(
+                    index);
+            int size = model_tensor_size * sizeof(int8_t);
+            bh_memcpy_s(output_tensor, size, ot, size);
+            model_tensor_size = size;
+            break;
+        }
+        default:
+        {
+            NN_ERR_PRINTF("Unsupported tensor type for output.");
+            return invalid_argument;
         }
     }
+    // else { // TODO: Assuming uint8 quantized networks.
+    //     TfLiteAffineQuantization *quant_info =
+    //         (TfLiteAffineQuantization *)tensor->quantization.params;
+    //     if (quant_info->scale->size != 1 || quant_info->zero_point->size != 1) {
+    //         NN_ERR_PRINTF("Quantization per channel is not supported");
+    //         return runtime_error;
+    //     }
+    //     uint8_t *ot = tfl_ctx->interpreters[ctx]
+    //                       .interpreter->typed_output_tensor<uint8_t>(index);
+
+    //     float scale = quant_info->scale->data[0];
+    //     float zero_point = (float)quant_info->zero_point->data[0];
+    //     NN_DBG_PRINTF("output tensor: (scale, offset) = (%f, %f)", scale,
+    //                   zero_point);
+
+    //     float *output_tensor_f = (float *)output_tensor;
+    //     for (uint32_t i = 0; i < model_tensor_size; ++i) {
+    //         output_tensor_f[i] = (ot[i] - zero_point) * scale;
+    //         NN_DBG_PRINTF("Output %f", ot, output_tensor_f[i]);
+    //     }
+    // }
 
     *output_tensor_size = model_tensor_size;
     return success;
