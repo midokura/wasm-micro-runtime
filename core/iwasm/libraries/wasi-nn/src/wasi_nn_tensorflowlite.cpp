@@ -160,21 +160,21 @@ preprocess_and_resize_tensor(TfLiteTensor *input_tensor_tf,
     }
     NN_DBG_PRINTF("Resizing tensor from (%d, %d) to (%d, %d)",
                  img_h, img_w, tf_h, tf_w);
-    char filename_org[64];
-    snprintf(filename_org, sizeof(filename_org), "/tmp/non_tf-resized_%04d.jpg", jpeg_save_counter);
+    //char filename_org[64];
+    //snprintf(filename_org, sizeof(filename_org), "/tmp/non_tf-resized_%04d.jpg", jpeg_save_counter);
     cv::Mat resized_mat;
     switch (input_tensor->type) {
         case fp32:
         {
             cv::Mat input_mat(img_h, img_w, CV_32FC3, input_tensor->data);
-            save_resized_tensor_as_jpeg(input_mat, filename_org);
+            //save_resized_tensor_as_jpeg(input_mat, filename_org);
             cv::resize(input_mat, resized_mat, cv::Size(tf_w, tf_h));
             break;
         }
         case up8:
         {
             cv::Mat input_mat(img_h, img_w, CV_8UC3, input_tensor->data);
-            save_resized_tensor_as_jpeg(input_mat, filename_org);
+            //save_resized_tensor_as_jpeg(input_mat, filename_org);
             cv::resize(input_mat, resized_mat, cv::Size(tf_w, tf_h));
             break;
         }
@@ -188,13 +188,13 @@ preprocess_and_resize_tensor(TfLiteTensor *input_tensor_tf,
         NN_ERR_PRINTF("Error when allocating memory for resized tensor.");
         return too_large;
     }
-    char filename[64];
-    snprintf(filename, sizeof(filename), "/tmp/tf-resized_%04d.jpg", jpeg_save_counter++);
+    //char filename[64];
+    //snprintf(filename, sizeof(filename), "/tmp/tf-resized_%04d.jpg", jpeg_save_counter++);
 
-    wasi_nn_error jpeg_result = save_resized_tensor_as_jpeg(resized_mat, filename);
-    if (jpeg_result != success) {
-       return jpeg_result;
-    }
+    //wasi_nn_error jpeg_result = save_resized_tensor_as_jpeg(resized_mat, filename);
+    //if (jpeg_result != success) {
+    //   return jpeg_result;
+    //}
     bh_memcpy_s(*output_data, data_length, resized_mat.data, data_length);
     // printf("First value in resized_mat: %f\n", *((float*)resized_mat.data));
     return success;
@@ -274,8 +274,8 @@ load_by_name(void *tflite_ctx, const char *filename, uint32_t filename_len,
         return too_large;
     }
 
-    // Use CPU as default
-    tfl_ctx->models[*g].target = cpu;
+    // Use TPU as default
+    tfl_ctx->models[*g].target = tpu;
     return success;
 }
 
@@ -428,31 +428,47 @@ set_input(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
         int size = model_tensor_size * sizeof(float);
         bh_memcpy_s(it, size, input_tensor_data, size);
     }
-    else { // TODO: Assuming uint8 quantized networks.
-        TfLiteAffineQuantization *quant_info =
-            (TfLiteAffineQuantization *)tensor->quantization.params;
-        if (quant_info->scale->size != 1 || quant_info->zero_point->size != 1) {
-            NN_ERR_PRINTF("Quantization per channel is not supported");
-            return runtime_error;
-        }
-        uint8_t *it =
-            tfl_ctx->interpreters[ctx].interpreter->typed_input_tensor<uint8_t>(
-                index);
+    else {
+        switch (tensor->type) {
+            case kTfLiteInt32:
+        {
+            auto *input = 
+                tfl_ctx->interpreters[ctx].interpreter->typed_input_tensor<int32_t>(
+                    index);
+            if (input == NULL)
+                return too_large;
 
-        float scale = quant_info->scale->data[0];
-        float zero_point = (float)quant_info->zero_point->data[0];
-        NN_DBG_PRINTF("input tensor: (scale, offset) = (%f, %f)", scale,
-                      zero_point);
-
-        float inv_scale = 1.0f / scale;
-        uint8_t *input_data = (uint8_t *)input_tensor_data;
-        for (uint32_t i = 0; i < model_tensor_size; ++i) {
-           it[i] = (uint8_t)(input_data[i] * inv_scale + zero_point);
+            bh_memcpy_s(input, model_tensor_size * sizeof(int32_t), input_tensor->data,
+                        model_tensor_size * sizeof(int32_t));
+            break;
         }
-    }
-    if (input_tensor_scaled_data != NULL) {
-        free(input_tensor_scaled_data);
-        input_tensor_scaled_data = NULL;
+        case kTfLiteInt8:
+        {
+            auto *input =
+                tfl_ctx->interpreters[ctx].interpreter->typed_input_tensor<int8_t>(
+                    index);
+            if (input == NULL)
+                return too_large;
+
+            bh_memcpy_s(input, model_tensor_size * sizeof(int8_t), input_tensor->data,
+                        model_tensor_size * sizeof(int8_t));
+            break;
+        } 
+        case kTfLiteUInt8:
+        {
+            auto *input =
+                tfl_ctx->interpreters[ctx].interpreter->typed_input_tensor<uint8_t>(
+                    index);
+            if (input == NULL)
+                return too_large;
+
+            bh_memcpy_s(input, model_tensor_size * sizeof(uint8_t), input_tensor->data,
+                        model_tensor_size * sizeof(uint8_t));
+            break;
+        } default:
+            NN_ERR_PRINTF("Unsupported tensor type for quantized model.");
+            return invalid_argument;
+        }
     }
     return success;
 }
@@ -504,8 +520,7 @@ get_output(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
         return too_large;
     }
 
-    if (tensor->quantization.type == kTfLiteNoQuantization) {
-        NN_DBG_PRINTF("No quantization information");
+    if (1) {
         float *ot =
             tfl_ctx->interpreters[ctx].interpreter->typed_output_tensor<float>(
                 index);
