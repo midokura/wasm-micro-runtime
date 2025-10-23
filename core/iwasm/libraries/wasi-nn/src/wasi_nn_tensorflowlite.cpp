@@ -458,18 +458,17 @@ set_input(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
             int size = model_tensor_size * sizeof(int8_t);
             bh_memcpy_s(it, size, input_tensor_data, size);
         }
+        else {
+            NN_ERR_PRINTF("Unsupported quantized tensor type: %d",
+                          tensor->type);
+            return invalid_argument;
+        }
     }
-    else
-    {
-        NN_ERR_PRINTF("Unsupported quantized tensor type: %d", tensor->type);
-        return invalid_argument;
+    if (input_tensor_scaled_data != NULL) {
+        free(input_tensor_scaled_data);
+        input_tensor_scaled_data = NULL;
     }
-}
-if (input_tensor_scaled_data != NULL) {
-    free(input_tensor_scaled_data);
-    input_tensor_scaled_data = NULL;
-}
-return success;
+    return success;
 }
 
 __attribute__((visibility("default"))) wasi_nn_error
