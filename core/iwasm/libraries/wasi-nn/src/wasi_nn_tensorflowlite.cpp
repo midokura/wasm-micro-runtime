@@ -455,29 +455,21 @@ set_input(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
         else if (tensor->type == kTfLiteInt8) {
             int8_t *it = tfl_ctx->interpreters[ctx]
                              .interpreter->typed_input_tensor<int8_t>(index);
-            for (uint32_t i = 0; i < model_tensor_size; ++i) {
-                int32_t quantized = (int32_t)roundf(
-                    (float)input_data[i] * inv_scale + (float)zero_point);
-                if (quantized < -128)
-                    quantized = -128;
-                if (quantized > 127)
-                    quantized = 127;
-                it[i] = (int8_t)quantized;
-                NN_DBG_PRINTF("Input[%u]: raw=%u, quantized=%d", i,
-                              input_data[i], it[i]);
-            }
-        }
-        else {
-            NN_ERR_PRINTF("Unsupported quantized tensor type: %d",
-                          tensor->type);
-            return invalid_argument;
+            int size = model_tensor_size * sizeof(int8_t);
+            bh_memcpy_s(it, size, input_tensor_data, size);
         }
     }
-    if (input_tensor_scaled_data != NULL) {
-        free(input_tensor_scaled_data);
-        input_tensor_scaled_data = NULL;
+    else
+    {
+        NN_ERR_PRINTF("Unsupported quantized tensor type: %d", tensor->type);
+        return invalid_argument;
     }
-    return success;
+}
+if (input_tensor_scaled_data != NULL) {
+    free(input_tensor_scaled_data);
+    input_tensor_scaled_data = NULL;
+}
+return success;
 }
 
 __attribute__((visibility("default"))) wasi_nn_error
