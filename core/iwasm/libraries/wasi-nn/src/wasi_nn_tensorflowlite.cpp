@@ -463,6 +463,8 @@ set_input(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
                 if (quantized > 127)
                     quantized = 127;
                 it[i] = (int8_t)quantized;
+                NN_DBG_PRINTF("Input[%u]: raw=%u, quantized=%d", i,
+                              input_data[i], it[i]);
             }
         }
         else {
