@@ -159,7 +159,7 @@ preprocess_and_resize_tensor(TfLiteTensor *input_tensor_tf,
         return invalid_argument;
     }
     NN_DBG_PRINTF("Resizing tensor from (%d, %d) to (%d, %d)",
-                img_h, img_w, tf_h, tf_w);
+                 img_h, img_w, tf_h, tf_w);
     cv::Mat resized_mat;
     switch (input_tensor->type) {
         case fp32:
