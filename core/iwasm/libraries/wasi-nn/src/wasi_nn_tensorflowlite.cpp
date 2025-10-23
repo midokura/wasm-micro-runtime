@@ -284,7 +284,7 @@ load_by_name(void *tflite_ctx, const char *filename, uint32_t filename_len,
     }
 
     // Use TPU as default
-    tfl_ctx->models[*g].target = cpu;
+    tfl_ctx->models[*g].target = tpu;
     return success;
 }
 
