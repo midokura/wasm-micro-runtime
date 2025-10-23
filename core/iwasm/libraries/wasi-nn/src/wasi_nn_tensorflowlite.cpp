@@ -585,8 +585,8 @@ get_output(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
             for (uint32_t i = 0; i < model_tensor_size; ++i) {
                 // Print the output tensor values
                 // Note: This is for debugging purposes, can be removed in production.
-                if (ot[i] != -128) { // Avoid printing zeros
-                   NN_DBG_PRINTF("Output %d: %d", i, ot[i]);
+                if (ot[i] > -120) { // Avoid printing zeros
+                   NN_DBG_PRINTF("Output %d: %d", i%248, ot[i]);
                 }
             }
             bh_memcpy_s(output_tensor, size, ot, size);
