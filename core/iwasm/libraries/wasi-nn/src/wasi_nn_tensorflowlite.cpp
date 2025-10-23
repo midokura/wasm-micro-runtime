@@ -108,23 +108,19 @@ is_valid_graph_execution_context(TFLiteContext *tfl_ctx,
     return success;
 }
 
-wasi_nn_error
-save_resized_tensor_as_jpeg(const cv::Mat &resized_mat,
-                            const std::string &output_path)
-{
+
+wasi_nn_error save_resized_tensor_as_jpeg(const cv::Mat& resized_mat, const std::string& output_path) {
     std::vector<uchar> jpeg_buf;
-    std::vector<int> jpeg_params = { cv::IMWRITE_JPEG_QUALITY, 90 };
+    std::vector<int> jpeg_params = {cv::IMWRITE_JPEG_QUALITY, 90};
 
     cv::Mat converted;
     if (resized_mat.type() == CV_32FC3) {
         cv::Mat tmp_8u;
         resized_mat.convertTo(tmp_8u, CV_8UC3, 255.0);
         cv::cvtColor(tmp_8u, converted, cv::COLOR_RGB2BGR);
-    }
-    else if (resized_mat.type() == CV_8UC3) {
+    } else if (resized_mat.type() == CV_8UC3) {
         cv::cvtColor(resized_mat, converted, cv::COLOR_RGB2BGR);
-    }
-    else {
+    } else {
         NN_ERR_PRINTF("Unsupported image format: type=%d", resized_mat.type());
         return invalid_argument;
     }
@@ -134,7 +130,7 @@ save_resized_tensor_as_jpeg(const cv::Mat &resized_mat,
         return invalid_argument;
     }
 
-    FILE *fp = fopen(output_path.c_str(), "wb");
+    FILE* fp = fopen(output_path.c_str(), "wb");
     if (!fp) {
         NN_ERR_PRINTF("Failed to open output file: %s", output_path.c_str());
         return invalid_argument;
@@ -162,8 +158,8 @@ preprocess_and_resize_tensor(TfLiteTensor *input_tensor_tf,
         NN_ERR_PRINTF("Invalid tensor dimensions.");
         return invalid_argument;
     }
-    NN_DBG_PRINTF("Resizing tensor from (%d, %d) to (%d, %d)", img_h, img_w,
-                  tf_h, tf_w);
+    NN_DBG_PRINTF("Resizing tensor from (%d, %d) to (%d, %d)",
+                img_h, img_w, tf_h, tf_w);
     cv::Mat resized_mat;
     switch (input_tensor->type) {
         case fp32:
@@ -406,7 +402,7 @@ set_input(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
                                      &input_tensor_scaled_data);
         input_tensor_data = input_tensor_scaled_data;
         for (uint32_t i = 0; i < input_tensor->dimensions->size; i++) {
-            input_tensor->dimensions->buf[i] = tensor->dims->data[i];
+           input_tensor->dimensions->buf[i] = tensor->dims->data[i];
         }
     }
     else {
@@ -533,15 +529,13 @@ get_output(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
                 index);
         for (uint32_t i = 0; i < model_tensor_size; ++i) {
             // Print the output tensor values
-            // Note: This is for debugging purposes, can be removed in
-            // production.
+            // Note: This is for debugging purposes, can be removed in production.
             if (ot[i] != 0.0f) { // Avoid printing zeros
-                NN_DBG_PRINTF("Output %d: %f", i, ot[i]);
+               NN_DBG_PRINTF("Output %d: %f", i, ot[i]);
             }
         }
         int size = model_tensor_size * sizeof(float);
-        NN_DBG_PRINTF("Index %d: Dim %d Size %d", index, model_tensor_size,
-                      size);
+        NN_DBG_PRINTF("Index %d: Dim %d Size %d", index, model_tensor_size, size);
         bh_memcpy_s(output_tensor, size, ot, size);
         model_tensor_size = size;
     }
