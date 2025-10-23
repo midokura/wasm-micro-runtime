@@ -545,6 +545,8 @@ get_output(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
             int32_t *ot =
                 tfl_ctx->interpreters[ctx].interpreter->typed_output_tensor<int32_t>(
                     index);
+            int size = model_tensor_size * sizeof(int32_t);
+            NN_DBG_PRINTF("Index %d: Dim %d Size %d", index, model_tensor_size, size);
             for (uint32_t i = 0; i < model_tensor_size; ++i) {
                 // Print the output tensor values
                 // Note: This is for debugging purposes, can be removed in production.
@@ -552,7 +554,6 @@ get_output(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
                    NN_DBG_PRINTF("Output %d: %d", i, ot[i]);
                 }
             }
-            int size = model_tensor_size * sizeof(int32_t);
             bh_memcpy_s(output_tensor, size, ot, size);
             model_tensor_size = size;
             break;
@@ -579,14 +580,15 @@ get_output(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
             int8_t *ot =
                 tfl_ctx->interpreters[ctx].interpreter->typed_output_tensor<int8_t>(
                     index);
+            int size = model_tensor_size * sizeof(int8_t);
+            NN_DBG_PRINTF("Index %d: Dim %d Size %d", index, model_tensor_size, size);
             for (uint32_t i = 0; i < model_tensor_size; ++i) {
                 // Print the output tensor values
                 // Note: This is for debugging purposes, can be removed in production.
-                if (ot[i] != 0) { // Avoid printing zeros
+                if (ot[i] != -128) { // Avoid printing zeros
                    NN_DBG_PRINTF("Output %d: %d", i, ot[i]);
                 }
             }
-            int size = model_tensor_size * sizeof(int8_t);
             bh_memcpy_s(output_tensor, size, ot, size);
             model_tensor_size = size;
             break;
