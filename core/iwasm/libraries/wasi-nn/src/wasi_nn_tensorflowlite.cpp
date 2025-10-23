@@ -566,10 +566,6 @@ get_output(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
                               .interpreter->typed_output_tensor<uint8_t>(index);
             for (uint32_t i = 0; i < model_tensor_size; ++i) {
                 output_tensor_f[i] = ((float)ot[i] - (float)zero_point) * scale;
-                if (ot[i] != 0) { // Avoid logging zeros
-                    NN_DBG_PRINTF("Output[%u]: raw=%u, dequantized=%f", i,
-                                  ot[i], output_tensor_f[i]);
-                }
             }
         }
         else if (tensor->type == kTfLiteInt8) {
@@ -577,10 +573,6 @@ get_output(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
                              .interpreter->typed_output_tensor<int8_t>(index);
             for (uint32_t i = 0; i < model_tensor_size; ++i) {
                 output_tensor_f[i] = ((float)ot[i] - (float)zero_point) * scale;
-                if (ot[i] != 0) { // Avoid logging zeros
-                    NN_DBG_PRINTF("Output[%u]: raw=%d, dequantized=%f", i,
-                                  ot[i], output_tensor_f[i]);
-                }
             }
         }
         else {
