@@ -438,15 +438,8 @@ set_input(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
         if (tensor->type == kTfLiteUInt8) {
             uint8_t *it = tfl_ctx->interpreters[ctx]
                               .interpreter->typed_input_tensor<uint8_t>(index);
-            for (uint32_t i = 0; i < model_tensor_size; ++i) {
-                int32_t quantized = (int32_t)roundf(
-                    (float)input_data[i] * inv_scale + (float)zero_point);
-                if (quantized < 0)
-                    quantized = 0;
-                if (quantized > 255)
-                    quantized = 255;
-                it[i] = (uint8_t)quantized;
-            }
+            int size = model_tensor_size * sizeof(uint8_t);
+            bh_memcpy_s(it, size, input_tensor_data, size);
         }
         else if (tensor->type == kTfLiteInt8) {
             int8_t *it = tfl_ctx->interpreters[ctx]
