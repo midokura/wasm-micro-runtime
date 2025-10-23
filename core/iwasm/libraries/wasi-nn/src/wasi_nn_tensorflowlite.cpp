@@ -156,6 +156,7 @@ preprocess_and_resize_tensor(TfLiteTensor *input_tensor_tf,
     uint32_t tf_w = input_tensor_tf->dims->data[2];
     uint32_t img_h = input_tensor->dimensions->buf[1];
     uint32_t img_w = input_tensor->dimensions->buf[2];
+    uint32_t img_c = input_tensor->dimensions->buf[3];
     if (tf_h == 0 || tf_w == 0 || img_h == 0 || img_w == 0) {
         NN_ERR_PRINTF("Invalid tensor dimensions.");
         return invalid_argument;
@@ -175,9 +176,15 @@ preprocess_and_resize_tensor(TfLiteTensor *input_tensor_tf,
         }
         case up8:
         {
-            cv::Mat input_mat(img_h, img_w, CV_8UC3, input_tensor->data);
-            save_resized_tensor_as_jpeg(input_mat, filename_org);
-            cv::resize(input_mat, resized_mat, cv::Size(tf_w, tf_h));
+            if (img_c == 1) {
+                cv::Mat input_mat(img_h, img_w, CV_8UC1, input_tensor->data);
+                save_resized_tensor_as_jpeg(input_mat, filename_org);
+                cv::resize(input_mat, resized_mat, cv::Size(tf_w, tf_h));
+            } else if (img_c == 3) {
+                cv::Mat input_mat(img_h, img_w, CV_8UC3, input_tensor->data);
+                save_resized_tensor_as_jpeg(input_mat, filename_org);
+                cv::resize(input_mat, resized_mat, cv::Size(tf_w, tf_h));
+            }
             break;
         }
         default:
