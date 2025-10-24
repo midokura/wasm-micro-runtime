@@ -120,6 +120,8 @@ wasi_nn_error save_resized_tensor_as_jpeg(const cv::Mat& resized_mat, const std:
         cv::cvtColor(tmp_8u, converted, cv::COLOR_RGB2BGR);
     } else if (resized_mat.type() == CV_8UC3) {
         cv::cvtColor(resized_mat, converted, cv::COLOR_RGB2BGR);
+    } else if (resized_mat.type() == CV_8UC1) {
+        cv::cvtColor(resized_mat, converted, cv::COLOR_GRAY2BGR);
     } else {
         NN_ERR_PRINTF("Unsupported image format: type=%d", resized_mat.type());
         return invalid_argument;
@@ -154,24 +156,35 @@ preprocess_and_resize_tensor(TfLiteTensor *input_tensor_tf,
     uint32_t tf_w = input_tensor_tf->dims->data[2];
     uint32_t img_h = input_tensor->dimensions->buf[1];
     uint32_t img_w = input_tensor->dimensions->buf[2];
+    uint32_t img_c = input_tensor->dimensions->buf[3];
     if (tf_h == 0 || tf_w == 0 || img_h == 0 || img_w == 0) {
         NN_ERR_PRINTF("Invalid tensor dimensions.");
         return invalid_argument;
     }
     NN_DBG_PRINTF("Resizing tensor from (%d, %d) to (%d, %d)",
                  img_h, img_w, tf_h, tf_w);
+    char filename_org[64];
+    snprintf(filename_org, sizeof(filename_org), "/tmp/non_tf-resized_%04d.jpg", jpeg_save_counter);
     cv::Mat resized_mat;
     switch (input_tensor->type) {
         case fp32:
         {
             cv::Mat input_mat(img_h, img_w, CV_32FC3, input_tensor->data);
+            save_resized_tensor_as_jpeg(input_mat, filename_org);
             cv::resize(input_mat, resized_mat, cv::Size(tf_w, tf_h));
             break;
         }
         case up8:
         {
-            cv::Mat input_mat(img_h, img_w, CV_8UC3, input_tensor->data);
-            cv::resize(input_mat, resized_mat, cv::Size(tf_w, tf_h));
+            if (img_c == 1) {
+                cv::Mat input_mat(img_h, img_w, CV_8UC1, input_tensor->data);
+                save_resized_tensor_as_jpeg(input_mat, filename_org);
+                cv::resize(input_mat, resized_mat, cv::Size(tf_w, tf_h));
+            } else if (img_c == 3) {
+                cv::Mat input_mat(img_h, img_w, CV_8UC3, input_tensor->data);
+                save_resized_tensor_as_jpeg(input_mat, filename_org);
+                cv::resize(input_mat, resized_mat, cv::Size(tf_w, tf_h));
+            }
             break;
         }
         default:
@@ -329,6 +342,15 @@ init_execution_context(void *tflite_ctx, graph g, graph_execution_context *ctx)
             TfLiteExternalDelegateOptions options =
                 TfLiteExternalDelegateOptionsDefault(
                     WASM_WASI_NN_EXTERNAL_DELEGATE_PATH);
+            NN_WARN_PRINTF("Enable cache read write options");
+
+            const char* allow_cache_key = "allowed_cache_mode";
+            const char* allow_cache_value = "true";
+            const char* cache_file_key = "cache_file_path";
+            const char* cache_file_value = "/tmp/vx_cache";
+            options.insert(&options,allow_cache_key,allow_cache_value);
+            options.insert(&options,cache_file_key,cache_file_value);
+
             tfl_ctx->delegate = TfLiteExternalDelegateCreate(&options);
             if (tfl_ctx->delegate == NULL) {
                 NN_ERR_PRINTF("Error when generating External delegate.");
