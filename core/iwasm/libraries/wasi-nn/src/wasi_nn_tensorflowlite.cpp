@@ -348,6 +348,15 @@ init_execution_context(void *tflite_ctx, graph g, graph_execution_context *ctx)
             TfLiteExternalDelegateOptions options =
                 TfLiteExternalDelegateOptionsDefault(
                     WASM_WASI_NN_EXTERNAL_DELEGATE_PATH);
+            NN_WARN_PRINTF("Enable cache read write options");
+
+            const char* allow_cache_key = "allowed_cache_mode";
+            const char* allow_cache_value = "true";
+            const char* cache_file_key = "cache_file_path";
+            const char* cache_file_value = "/tmp/vx_cache";
+            options.insert(&options,allow_cache_key,allow_cache_value);
+            options.insert(&options,cache_file_key,cache_file_value);
+
             tfl_ctx->delegate = TfLiteExternalDelegateCreate(&options);
             if (tfl_ctx->delegate == NULL) {
                 NN_ERR_PRINTF("Error when generating External delegate.");
@@ -373,6 +382,8 @@ init_execution_context(void *tflite_ctx, graph g, graph_execution_context *ctx)
         NN_WARN_PRINTF("Default encoding is CPU.");
 
     tfl_ctx->interpreters[*ctx].interpreter->AllocateTensors();
+    tflite::PrintInterpreterState(tfl_ctx->interpreters[*ctx]
+                    .interpreter.get());
     return success;
 }
 
@@ -492,6 +503,8 @@ compute(void *tflite_ctx, graph_execution_context ctx)
         return res;
 
     tfl_ctx->interpreters[ctx].interpreter->Invoke();
+    tflite::PrintInterpreterState(tfl_ctx->interpreters[ctx]
+                    .interpreter.get());
     return success;
 }
 
