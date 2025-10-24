@@ -431,9 +431,6 @@ set_input(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
         NN_DBG_PRINTF("input tensor: type=%d, (scale, zero_point) = (%f, %d)",
                       tensor->type, scale, zero_point);
 
-        float inv_scale = 1.0f / scale;
-        uint8_t *input_data = (uint8_t *)input_tensor_data;
-
         // Branch based on model's actual tensor type
         if (tensor->type == kTfLiteUInt8) {
             uint8_t *it = tfl_ctx->interpreters[ctx]
