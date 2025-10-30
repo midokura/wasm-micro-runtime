@@ -170,7 +170,6 @@ preprocess_and_resize_tensor(TfLiteTensor *input_tensor_tf,
         case fp32:
         {
             cv::Mat input_mat(img_h, img_w, CV_32FC3, input_tensor->data);
-            save_resized_tensor_as_jpeg(input_mat, filename_org);
             cv::resize(input_mat, resized_mat, cv::Size(tf_w, tf_h));
             break;
         }
@@ -178,11 +177,9 @@ preprocess_and_resize_tensor(TfLiteTensor *input_tensor_tf,
         {
             if (img_c == 1) {
                 cv::Mat input_mat(img_h, img_w, CV_8UC1, input_tensor->data);
-                save_resized_tensor_as_jpeg(input_mat, filename_org);
                 cv::resize(input_mat, resized_mat, cv::Size(tf_w, tf_h));
             } else if (img_c == 3) {
                 cv::Mat input_mat(img_h, img_w, CV_8UC3, input_tensor->data);
-                save_resized_tensor_as_jpeg(input_mat, filename_org);
                 cv::resize(input_mat, resized_mat, cv::Size(tf_w, tf_h));
             }
             break;
