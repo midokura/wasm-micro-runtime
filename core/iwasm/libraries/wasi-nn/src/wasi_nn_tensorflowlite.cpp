@@ -15,7 +15,7 @@
 #include <tensorflow/lite/model.h>
 #include <tensorflow/lite/optional_debug_tools.h>
 #include <tensorflow/lite/error_reporter.h>
-
+#include <sys/stat.h>
 #if WASM_ENABLE_WASI_NN_GPU != 0
 #include <tensorflow/lite/delegates/gpu/delegate.h>
 #endif
@@ -28,7 +28,7 @@
 #define MAX_GRAPHS_PER_INST 10
 /* Maximum number of graph execution context per WASM instance*/
 #define MAX_GRAPH_EXEC_CONTEXTS_PER_INST 10
-
+#define CACHE_DIR "/tmp/vx_cache"
 typedef struct {
     std::unique_ptr<tflite::Interpreter> interpreter;
 } Interpreter;
@@ -46,6 +46,8 @@ typedef struct {
     Interpreter interpreters[MAX_GRAPH_EXEC_CONTEXTS_PER_INST];
     korp_mutex g_lock;
     TfLiteDelegate *delegate;
+    int ctx_to_graph[MAX_GRAPH_EXEC_CONTEXTS_PER_INST];
+    bool need_reinit[MAX_GRAPH_EXEC_CONTEXTS_PER_INST];
 } TFLiteContext;
 
 /* Utils */
@@ -106,6 +108,11 @@ is_valid_graph_execution_context(TFLiteContext *tfl_ctx,
         return runtime_error;
     }
     return success;
+}
+
+static bool file_exists(const char* path) {
+    struct stat buffer;
+    return (stat(path, &buffer) == 0);
 }
 
 
@@ -190,7 +197,7 @@ preprocess_and_resize_tensor(TfLiteTensor *input_tensor_tf,
     }
     size_t data_length = resized_mat.total() * resized_mat.elemSize();
     *output_data = malloc(data_length);
-    if (output_data == NULL) {
+    if (*output_data == NULL) {
         NN_ERR_PRINTF("Error when allocating memory for resized tensor.");
         return too_large;
     }
@@ -291,6 +298,7 @@ init_execution_context(void *tflite_ctx, graph g, graph_execution_context *ctx)
     if (success != (res = initialize_graph_ctx(tfl_ctx, g, ctx)))
         return res;
 
+    tfl_ctx->ctx_to_graph[*ctx] = g;
     // Build the interpreter with the InterpreterBuilder.
     tflite::ops::builtin::BuiltinOpResolver resolver;
     tflite::InterpreterBuilder tflite_builder(*tfl_ctx->models[g].model,
@@ -344,9 +352,16 @@ init_execution_context(void *tflite_ctx, graph g, graph_execution_context *ctx)
             const char* allow_cache_key = "allowed_cache_mode";
             const char* allow_cache_value = "true";
             const char* cache_file_key = "cache_file_path";
-            const char* cache_file_value = "/tmp/vx_cache";
-            options.insert(&options,allow_cache_key,allow_cache_value);
-            options.insert(&options,cache_file_key,cache_file_value);
+            const char* cache_file_value = CACHE_DIR;
+            options.insert(&options, allow_cache_key, allow_cache_value);
+            options.insert(&options, cache_file_key, cache_file_value);
+
+
+            if (!file_exists(cache_file_value)) {
+                tfl_ctx->need_reinit[*ctx] = true;
+            } else {
+                NN_DBG_PRINTF("Cache file found at %s", cache_file_value);
+            }
 
             tfl_ctx->delegate = TfLiteExternalDelegateCreate(&options);
             if (tfl_ctx->delegate == NULL) {
@@ -486,6 +501,39 @@ compute(void *tflite_ctx, graph_execution_context ctx)
         return res;
 
     tfl_ctx->interpreters[ctx].interpreter->Invoke();
+
+    if (tfl_ctx->need_reinit[ctx]) {
+        int g = tfl_ctx->ctx_to_graph[ctx];
+        NN_WARN_PRINTF("WASI-NN: Reloading cache for next inference.");
+        tfl_ctx->interpreters[ctx].interpreter.reset();
+        TfLiteExternalDelegateDelete(tfl_ctx->delegate);
+
+        std::unique_ptr<tflite::Interpreter> new_interpreter;
+        tflite::ops::builtin::BuiltinOpResolver resolver;
+        tflite::InterpreterBuilder builder(*tfl_ctx->models[g].model, resolver);
+        builder(&new_interpreter);
+
+        TfLiteExternalDelegateOptions options =
+                TfLiteExternalDelegateOptionsDefault(
+                    WASM_WASI_NN_EXTERNAL_DELEGATE_PATH);
+        NN_WARN_PRINTF("Enable cache read write options");
+
+        const char* allow_cache_key = "allowed_cache_mode";
+        const char* allow_cache_value = "true";
+        const char* cache_file_key = "cache_file_path";
+        const char* cache_file_value = CACHE_DIR;
+        options.insert(&options, allow_cache_key, allow_cache_value);
+        options.insert(&options, cache_file_key, cache_file_value);
+
+        TfLiteDelegate* del = TfLiteExternalDelegateCreate(&options);
+        new_interpreter->ModifyGraphWithDelegate(del);
+
+        new_interpreter->AllocateTensors();
+        tfl_ctx->interpreters[ctx].interpreter.swap(new_interpreter);
+        tfl_ctx->need_reinit[ctx] = false;
+
+    }
+
     return success;
 }
 
@@ -620,7 +668,10 @@ init_backend(void **tflite_ctx)
     }
 
     tfl_ctx->delegate = NULL;
-
+    for (int i = 0; i < MAX_GRAPH_EXEC_CONTEXTS_PER_INST; i++) {
+        tfl_ctx->ctx_to_graph[i] = -1;
+        tfl_ctx->need_reinit[i] = false;
+    }
     *tflite_ctx = (void *)tfl_ctx;
     return success;
 }
