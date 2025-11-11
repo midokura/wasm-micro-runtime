@@ -52,7 +52,7 @@ typedef struct {
 static OnnxRuntimeContext g_ort_ctx;
 static OnnxRuntimeGraph g_graphs[MAX_GRAPHS];
 static OnnxRuntimeExecCtx g_exec_ctxs[MAX_CONTEXTS];
-
+static std::unordered_map<std::string, int> g_graph_cache;
 /* Helper functions */
 static void
 check_status_and_log(OrtStatus *status)
@@ -413,6 +413,7 @@ deinit_backend(void *onnx_ctx)
     ctx->ort_api->ReleaseSessionOptions(ctx->session_options);
     ctx->ort_api->ReleaseEnv(ctx->env);
     ctx->is_initialized = false;
+    g_graph_cache.clear();
 
     NN_INFO_PRINTF("ONNX Runtime backend deinitialized");
     return success;
@@ -489,18 +490,35 @@ load_by_name(void *onnx_ctx, const char *name, uint32_t filename_len, graph *g)
 {
     OnnxRuntimeContext *ctx = (OnnxRuntimeContext *)onnx_ctx;
     std::lock_guard<std::mutex> lock(ctx->mutex);
-
     int graph_index = -1;
-    for (int i = 0; i < MAX_GRAPHS; i++) {
-        if (!g_graphs[i].is_initialized) {
-            graph_index = i;
-            break;
+    std::string keyname(name, filename_len);
+    auto it = g_graph_cache.find(keyname);
+    if (it != g_graph_cache.end()) {
+        graph_index = it->second;
+
+        if (graph_index >= 0 && graph_index < MAX_GRAPHS &&
+            g_graphs[graph_index].is_initialized) {
+
+            if (g_graphs[graph_index].session) {
+                    ctx->ort_api->ReleaseSession(g_graphs[graph_index].session);
+                    g_graphs[graph_index].session = nullptr;
+            }
+            g_graphs[graph_index].is_initialized = false;
         }
     }
 
     if (graph_index == -1) {
-        NN_ERR_PRINTF("Maximum number of graphs reached");
-        return runtime_error;
+        for (int i = 0; i < MAX_GRAPHS; i++) {
+            if (!g_graphs[i].is_initialized) {
+                graph_index = i;
+                break;
+            }
+        }
+
+        if (graph_index == -1) {
+            NN_ERR_PRINTF("Maximum number of graphs reached");
+            return runtime_error;
+        }
     }
 
     OrtStatus *status = ctx->ort_api->CreateSession(
@@ -514,6 +532,7 @@ load_by_name(void *onnx_ctx, const char *name, uint32_t filename_len, graph *g)
 
     g_graphs[graph_index].is_initialized = true;
     *g = graph_index;
+    g_graph_cache[keyname] = graph_index;
 
     NN_INFO_PRINTF("ONNX model loaded from file %s as graph %d", name, graph_index);
     return success;
@@ -530,20 +549,28 @@ init_execution_context(void *onnx_ctx, graph g, graph_execution_context *ctx)
     OnnxRuntimeContext *ort_ctx = (OnnxRuntimeContext *)onnx_ctx;
     std::lock_guard<std::mutex> lock(ort_ctx->mutex);
 
-    int ctx_index = -1;
-    for (int i = 0; i < MAX_CONTEXTS; i++) {
-        if (!g_exec_ctxs[i].is_initialized) {
-            ctx_index = i;
-            break;
-        }
-    }
-
-    if (ctx_index == -1) {
-        NN_ERR_PRINTF("Maximum number of execution contexts reached");
-        return runtime_error;
-    }
+    int ctx_index = g;
 
     OnnxRuntimeExecCtx *exec_ctx = &g_exec_ctxs[ctx_index];
+    if (exec_ctx->is_initialized) {
+        // Clear input/output names
+        for (const char* name : exec_ctx->input_names) {
+            ort_ctx->allocator->Free(ort_ctx->allocator, (void*)name);
+        }
+        exec_ctx->input_names.clear();
+        for (const char* name : exec_ctx->output_names) {
+            ort_ctx->allocator->Free(ort_ctx->allocator, (void*)name);
+        }
+        exec_ctx->output_names.clear();
+        // Free memory_info
+        if (exec_ctx->memory_info) {
+            ort_ctx->ort_api->ReleaseMemoryInfo(exec_ctx->memory_info);
+            exec_ctx->memory_info = nullptr;
+        }
+        exec_ctx->inputs.clear();
+        exec_ctx->outputs.clear();
+        exec_ctx->is_initialized = false;
+    }
     exec_ctx->graph = &g_graphs[g];
 
     OrtStatus *status = ort_ctx->ort_api->CreateCpuMemoryInfo(OrtArenaAllocator, OrtMemTypeDefault, &exec_ctx->memory_info);

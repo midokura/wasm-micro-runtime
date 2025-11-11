@@ -10,6 +10,7 @@
 #include "wasi_nn_types.h"
 #include "wasm_export.h"
 #include <opencv2/opencv.hpp>
+#include <unordered_map>
 #include <tensorflow/lite/interpreter.h>
 #include <tensorflow/lite/kernels/register.h>
 #include <tensorflow/lite/model.h>
@@ -50,6 +51,7 @@ typedef struct {
     bool need_reinit[MAX_GRAPH_EXEC_CONTEXTS_PER_INST];
 } TFLiteContext;
 
+static std::unordered_map<std::string, int> g_tflite_graph_cache;
 /* Utils */
 
 static wasi_nn_error
@@ -267,22 +269,52 @@ load_by_name(void *tflite_ctx, const char *filename, uint32_t filename_len,
 {
     TFLiteContext *tfl_ctx = (TFLiteContext *)tflite_ctx;
 
-    wasi_nn_error res = initialize_g(tfl_ctx, g);
-    if (success != res)
-        return res;
+    std::string key_name(filename, filename_len);
+    int graph_index = -1;
+
+    auto it = g_tflite_graph_cache.find(key_name);
+    if (it != g_tflite_graph_cache.end()) {
+        graph_index = it->second;
+        NN_INFO_PRINTF("TFLite model %s found in cache, clearing old instance (graph %d)",
+                       filename, graph_index);
+        if (tfl_ctx->models[graph_index].model) {
+            tfl_ctx->models[graph_index].model.reset();
+        }
+        if (tfl_ctx->interpreters[graph_index].interpreter) {
+            tfl_ctx->interpreters[graph_index].interpreter.reset();
+        }
+        if (tfl_ctx->delegate) {
+#if WASM_ENABLE_WASI_NN_GPU != 0
+            TfLiteGpuDelegateV2Delete(tfl_ctx->delegate);
+#elif WASM_ENABLE_WASI_NN_EXTERNAL_DELEGATE != 0
+            TfLiteExternalDelegateDelete(tfl_ctx->delegate);
+#endif
+            tfl_ctx->delegate = nullptr;
+        }
+        tfl_ctx->need_reinit[graph_index] = false;
+        tfl_ctx->models[graph_index].target = cpu;   // default safe state
+    } else {
+        wasi_nn_error res = initialize_g(tfl_ctx, g);
+        if (res != success) {
+            return res;
+        }
+        graph_index = *g;
+    }
 
     // Load model
-    tfl_ctx->models[*g].model =
+    tfl_ctx->models[graph_index].model =
         std::move(tflite::FlatBufferModel::BuildFromFile(filename, NULL));
 
-    if (tfl_ctx->models[*g].model == NULL) {
+    if (tfl_ctx->models[graph_index].model == NULL) {
         NN_ERR_PRINTF("Loading model error.");
         return too_large;
     }
 
     // Use TPU as default
     NN_DBG_PRINTF("Use TPU as default target.");
-    tfl_ctx->models[*g].target = tpu;
+    tfl_ctx->models[graph_index].target = tpu;
+
+    g_tflite_graph_cache[key_name] = graph_index;
     return success;
 }
 
@@ -506,13 +538,14 @@ compute(void *tflite_ctx, graph_execution_context ctx)
         int g = tfl_ctx->ctx_to_graph[ctx];
         NN_WARN_PRINTF("WASI-NN: Reloading cache for next inference.");
         tfl_ctx->interpreters[ctx].interpreter.reset();
+#if WASM_ENABLE_WASI_NN_EXTERNAL_DELEGATE != 0
         TfLiteExternalDelegateDelete(tfl_ctx->delegate);
-
+#endif
         std::unique_ptr<tflite::Interpreter> new_interpreter;
         tflite::ops::builtin::BuiltinOpResolver resolver;
         tflite::InterpreterBuilder builder(*tfl_ctx->models[g].model, resolver);
         builder(&new_interpreter);
-
+#if WASM_ENABLE_WASI_NN_EXTERNAL_DELEGATE != 0
         TfLiteExternalDelegateOptions options =
                 TfLiteExternalDelegateOptionsDefault(
                     WASM_WASI_NN_EXTERNAL_DELEGATE_PATH);
@@ -531,7 +564,7 @@ compute(void *tflite_ctx, graph_execution_context ctx)
         new_interpreter->AllocateTensors();
         tfl_ctx->interpreters[ctx].interpreter.swap(new_interpreter);
         tfl_ctx->need_reinit[ctx] = false;
-
+#endif
     }
 
     return success;
@@ -723,6 +756,7 @@ deinit_backend(void *tflite_ctx)
         tfl_ctx->interpreters[i].interpreter.reset();
     }
     os_mutex_destroy(&tfl_ctx->g_lock);
+    g_tflite_graph_cache.clear();
     delete tfl_ctx;
     NN_DBG_PRINTF("Memory free'd.");
     return success;
