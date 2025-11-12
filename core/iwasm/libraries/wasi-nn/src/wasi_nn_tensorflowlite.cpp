@@ -312,7 +312,7 @@ load_by_name(void *tflite_ctx, const char *filename, uint32_t filename_len,
 
     // Use TPU as default
     NN_DBG_PRINTF("Use TPU as default target.");
-    tfl_ctx->models[graph_index].target = tpu;
+    tfl_ctx->models[graph_index].target = cpu;
 
     g_tflite_graph_cache[key_name] = graph_index;
     return success;
