@@ -709,6 +709,7 @@ set_input(void *onnx_ctx, graph_execution_context ctx, uint32_t index, tensor *i
 
     for (size_t i = 0; i < num_dims; i++) {
         ort_dims[i] = model_dims[i];
+        NN_INFO_PRINTF("ort_dims[%zu] = %ld", i, ort_dims[i]);
     }
 
     OrtValue *input_value = nullptr;
