@@ -208,6 +208,22 @@ preprocess_and_resize_tensor(TfLiteTensor *input_tensor_tf,
     return success;
 }
 
+static bool IsFloatModel(const tflite::Model* model) {
+    auto subgraphs = model->subgraphs();
+    if (!subgraphs || subgraphs->size() == 0)
+        return false;
+
+    auto subgraph = subgraphs->Get(0); // Assuming single subgraph
+
+    for (flatbuffers::uoffset_t i = 0; i < subgraph->tensors()->size(); i++) {
+        const auto* t = subgraph->tensors()->Get(i);
+        if (t->type() == tflite::TensorType_FLOAT32) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /* WASI-NN (tensorflow) implementation */
 __attribute__((visibility("default"))) wasi_nn_error
 load(void *tflite_ctx, graph_builder_array *builder, graph_encoding encoding,
@@ -310,9 +326,9 @@ load_by_name(void *tflite_ctx, const char *filename, uint32_t filename_len,
         return too_large;
     }
 
-    // Use TPU as default
-    NN_DBG_PRINTF("Use TPU as default target.");
-    tfl_ctx->models[graph_index].target = tpu;
+    // Use TPU if model is not float
+    IsFloatModel(tfl_ctx->models[graph_index].model->GetModel()) ?
+        tfl_ctx->models[graph_index].target = cpu : tfl_ctx->models[graph_index].target = tpu;
 
     g_tflite_graph_cache[key_name] = graph_index;
     return success;
